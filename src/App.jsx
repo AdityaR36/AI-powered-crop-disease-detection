@@ -1,16 +1,17 @@
- import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Upload, 
-  Camera, 
-  Scan, 
-  CheckCircle, 
-  AlertTriangle, 
-  Leaf, 
-  Info, 
-  X, 
-  ChevronRight, 
-  Droplets, 
-  Sun, 
+import React, { useState, useEffect, useRef } from 'react';
+import { useDropzone } from 'react-dropzone';
+import {
+  Upload,
+  Camera,
+  Scan,
+  CheckCircle,
+  AlertTriangle,
+  Leaf,
+  Info,
+  X,
+  ChevronRight,
+  Droplets,
+  Sun,
   Wind,
   ShieldCheck,
   Activity,
@@ -27,11 +28,11 @@ import {
   Send,
   Bot,
   Globe,
-  Mic, 
-  MicOff, 
-  MapPin, 
-  CloudRain, 
-  HeartHandshake, 
+  Mic,
+  MicOff,
+  MapPin,
+  CloudRain,
+  HeartHandshake,
   Loader2,
   Navigation,
   Settings,
@@ -54,15 +55,13 @@ import {
   ChevronDown
 } from 'lucide-react';
 
-const apiKey = ""; // API Key injected by environment
+// --- Configuration ---
+const ROBOFLOW_API_KEY = "pk_79HP411j3YqL3znmvaEP"; // Publishable Key (safe for frontend)
+const ROBOFLOW_MODEL = "detect-and-classify";
+const ROBOFLOW_VERSION = 1;
 
-// --- Mock Data ---
-const NEARBY_SPECIALISTS = [
-  { id: 1, name: "Dr. R. Singh", role: "Agronomist", distance: "2.5 km", phone: "9876543210" },
-  { id: 2, name: "Kisan Seva Kendra", role: "Support Center", distance: "4.0 km", phone: "1800123456" },
-  { id: 3, name: "Priya Patel", role: "Plant Pathologist", distance: "8.2 km", phone: "9988776655" },
-  { id: 4, name: "Village Co-op", role: "General Support", distance: "1.5 km", phone: "9812345678" }
-];
+// --- Mock Data Removed, fetching from backend ---
+// const NEARBY_SPECIALISTS = []; // Fetched via API
 
 const SEASONAL_CROPS = {
   summer: [
@@ -88,21 +87,21 @@ const getDiseaseDB = (lang) => [
     name: lang === 'hi' ? 'स्वस्थ पौधा' : lang === 'ta' ? 'ஆரோக்கியமான தாவரம்' : 'Healthy Plant',
     status: 'healthy',
     confidence: 98.5,
-    description: lang === 'hi' 
+    description: lang === 'hi'
       ? 'आपका पौधा जोरदार और स्वस्थ दिखता है। कोई रोगजनक या पोषक तत्वों की कमी नहीं पाई गई।'
       : lang === 'ta'
-      ? 'உங்கள் தாவரம் ஆரோக்கியமாகத் தெரிகிறது. நோய்க்கிருமிகள் அல்லது ஊட்டச்சத்து குறைபாடுகள் எதுவும் கண்டறியப்படவில்லை.'
-      : 'Your plant looks vigorous and healthy. No signs of pathogens or nutrient deficiencies found.',
-    symptoms: lang === 'hi' 
+        ? 'உங்கள் தாவரம் ஆரோக்கியமாகத் தெரிகிறது. நோய்க்கிருமிகள் அல்லது ஊட்டச்சத்து குறைபாடுகள் எதுவும் கண்டறியப்படவில்லை.'
+        : 'Your plant looks vigorous and healthy. No signs of pathogens or nutrient deficiencies found.',
+    symptoms: lang === 'hi'
       ? ['चमकदार हरी पत्तियां', 'मजबूत तने', 'कोई मलिनकिरण नहीं']
       : lang === 'ta'
-      ? ['துடிப்பான பச்சை இலைகள்', 'வலுவான தண்டுகள்', 'நிறமாற்றம் இல்லை']
-      : ['Vibrant green leaves', 'Strong stems', 'No discoloration'],
+        ? ['துடிப்பான பச்சை இலைகள்', 'வலுவான தண்டுகள்', 'நிறமாற்றம் இல்லை']
+        : ['Vibrant green leaves', 'Strong stems', 'No discoloration'],
     treatment: lang === 'hi'
       ? ['नियमित रूप से पानी देना जारी रखें।', 'वर्तमान धूप के संपर्क को बनाए रखें।', 'हमेशा की तरह कीटों की निगरानी करें।']
       : lang === 'ta'
-      ? ['வழக்கமான நீர்ப்பாசன அட்டவணையைத் தொடரவும்.', 'சூரிய ஒளியைப் பராமரிக்கவும்.', 'வழக்கம் போல் பூச்சிகளைக் கண்காணிக்கவும்.']
-      : ['Continue regular watering schedule.', 'Maintain current sunlight exposure.', 'Monitor for pests as usual.'],
+        ? ['வழக்கமான நீர்ப்பாசன அட்டவணையைத் தொடரவும்.', 'சூரிய ஒளியைப் பராமரிக்கவும்.', 'வழக்கம் போல் பூச்சிகளைக் கண்காணிக்கவும்.']
+        : ['Continue regular watering schedule.', 'Maintain current sunlight exposure.', 'Monitor for pests as usual.'],
     icon: <CheckCircle className="w-12 h-12 text-emerald-500" />
   },
   {
@@ -113,18 +112,18 @@ const getDiseaseDB = (lang) => [
     description: lang === 'hi'
       ? 'टमाटर और आलू को प्रभावित करने वाला एक सामान्य कवक रोग। यह पत्तियों पर संकेंद्रित छल्ले का कारण बनता है।'
       : lang === 'ta'
-      ? 'தக்காளி மற்றும் உருளைக்கிழங்கை பாதிக்கும் ஒரு பொதுவான பூஞ்சை நோய். இது இலைகளில் வளையங்களை ஏற்படுத்துகிறது.'
-      : 'A common fungal disease affecting tomatoes and potatoes. It causes concentric rings on leaves.',
+        ? 'தக்காளி மற்றும் உருளைக்கிழங்கை பாதிக்கும் ஒரு பொதுவான பூஞ்சை நோய். இது இலைகளில் வளையங்களை ஏற்படுத்துகிறது.'
+        : 'A common fungal disease affecting tomatoes and potatoes. It causes concentric rings on leaves.',
     symptoms: lang === 'hi'
       ? ['संकेंद्रित छल्लों के साथ गहरे भूरे रंग के धब्बे', 'निचली पत्तियों का पीला पड़ना', 'तने के नासूर']
       : lang === 'ta'
-      ? ['இலைகளில் அடர் பழுப்பு நிற புள்ளிகள்', 'கீழ் இலைகள் மஞ்சள் நிறமாக மாறுதல்', 'தண்டு புண்கள்']
-      : ['Dark brown spots with concentric rings', 'Yellowing of lower leaves', 'Stem cankers'],
+        ? ['இலைகளில் அடர் பழுப்பு நிற புள்ளிகள்', 'கீழ் இலைகள் மஞ்சள் நிறமாக மாறுதல்', 'தண்டு புண்கள்']
+        : ['Dark brown spots with concentric rings', 'Yellowing of lower leaves', 'Stem cankers'],
     treatment: lang === 'hi'
       ? ['संक्रमित निचली पत्तियों को हटा दें।', 'तांबे आधारित कवकनाशी का प्रयोग करें।', 'पौधे के चारों ओर अच्छी हवा का संचार सुनिश्चित करें।', 'ऊपर से पानी देने से बचें।']
       : lang === 'ta'
-      ? ['பாதிக்கப்பட்ட கீழ் இலைகளை அகற்றவும்.', 'செப்பு அடிப்படையிலான பூஞ்சைக் கொல்லிகளைப் பயன்படுத்துங்கள்.', 'தாவரத்தைச் சுற்றி நல்ல காற்று சுழற்சியை உறுதி செய்யுங்கள்.']
-      : ['Remove infected lower leaves.', 'Apply copper-based fungicides.', 'Ensure good air circulation around the plant.', 'Avoid overhead watering.'],
+        ? ['பாதிக்கப்பட்ட கீழ் இலைகளை அகற்றவும்.', 'செப்பு அடிப்படையிலான பூஞ்சைக் கொல்லிகளைப் பயன்படுத்துங்கள்.', 'தாவரத்தைச் சுற்றி நல்ல காற்று சுழற்சியை உறுதி செய்யுங்கள்.']
+        : ['Remove infected lower leaves.', 'Apply copper-based fungicides.', 'Ensure good air circulation around the plant.', 'Avoid overhead watering.'],
     icon: <AlertTriangle className="w-12 h-12 text-amber-500" />
   },
   {
@@ -135,18 +134,18 @@ const getDiseaseDB = (lang) => [
     description: lang === 'hi'
       ? 'एक कवक रोग जो पत्तियों और तनों पर एक विशिष्ट सफेद पाउडर जैसा विकास प्रदर्शित करता है।'
       : lang === 'ta'
-      ? 'இலைகள் மற்றும் தண்டுகளில் ஒரு தனித்துவமான வெள்ளை தூள் வளர்ச்சியைக் காட்டும் ஒரு பூஞ்சை நோய்.'
-      : 'A fungal disease that displays a distinctive white powdery growth on leaves and stems.',
+        ? 'இலைகள் மற்றும் தண்டுகளில் ஒரு தனித்துவமான வெள்ளை தூள் வளர்ச்சியைக் காட்டும் ஒரு பூஞ்சை நோய்.'
+        : 'A fungal disease that displays a distinctive white powdery growth on leaves and stems.',
     symptoms: lang === 'hi'
       ? ['सफेद पाउडर के धब्बे', 'पत्तियों का मुड़ना', 'रुका हुआ विकास']
       : lang === 'ta'
-      ? ['வெள்ளை தூள் புள்ளிகள்', 'இலை சுருட்டுதல்', 'வளர்ச்சி குன்றியது']
-      : ['White powdery spots', 'Leaf curling or twisting', 'Stunted growth'],
+        ? ['வெள்ளை தூள் புள்ளிகள்', 'இலை சுருட்டுதல்', 'வளர்ச்சி குன்றியது']
+        : ['White powdery spots', 'Leaf curling or twisting', 'Stunted growth'],
     treatment: lang === 'hi'
       ? ['नीम का तेल या सल्फर कवकनाशी लगाएं।', 'गंभीर रूप से संक्रमित भागों को हटा दें।', 'पत्तियों पर नहीं, बल्कि जड़ में पानी दें।', 'धूप का संपर्क बढ़ाएँ।']
       : lang === 'ta'
-      ? ['வேப்ப எண்ணெய் அல்லது சல்பர் பூஞ்சைக் கொல்லிகளைப் பயன்படுத்துங்கள்.', 'பெரிதும் பாதிக்கப்பட்ட பகுதிகளை அகற்றவும்.', 'சூரிய ஒளியை அதிகரிக்கவும்.']
-      : ['Apply neem oil or sulfur fungicides.', 'Remove severely infected parts.', 'Water at the base, not on leaves.', 'Increase sunlight exposure.'],
+        ? ['வேப்ப எண்ணெய் அல்லது சல்பர் பூஞ்சைக் கொல்லிகளைப் பயன்படுத்துங்கள்.', 'பெரிதும் பாதிக்கப்பட்ட பகுதிகளை அகற்றவும்.', 'சூரிய ஒளியை அதிகரிக்கவும்.']
+        : ['Apply neem oil or sulfur fungicides.', 'Remove severely infected parts.', 'Water at the base, not on leaves.', 'Increase sunlight exposure.'],
     icon: <Wind className="w-12 h-12 text-stone-400" />
   },
   {
@@ -157,18 +156,18 @@ const getDiseaseDB = (lang) => [
     description: lang === 'hi'
       ? 'एक गंभीर बीमारी जो फसलों को तेजी से नष्ट कर सकती है। यह बड़े, गहरे पानी से लथपथ धब्बों के रूप में दिखाई देता है।'
       : lang === 'ta'
-      ? 'பயிர்களை விரைவாக அழிக்கும் ஒரு தீவிர நோய். இது பெரிய, இருண்ட நீர் நனைந்த புள்ளிகளாகத் தோன்றுகிறது.'
-      : 'A serious disease that can destroy crops rapidly. It appears as large, dark water-soaked spots.',
+        ? 'பயிர்களை விரைவாக அழிக்கும் ஒரு தீவிர நோய். இது பெரிய, இருண்ட நீர் நனைந்த புள்ளிகளாகத் தோன்றுகிறது.'
+        : 'A serious disease that can destroy crops rapidly. It appears as large, dark water-soaked spots.',
     symptoms: lang === 'hi'
       ? ['पत्तियों पर बड़े भूरे रंग के धब्बे', 'नीचे की तरफ सफेद कवक वृद्धि', 'फलों/कंदों का सड़ना']
       : lang === 'ta'
-      ? ['இலைகளில் பெரிய பழுப்பு நிற கறைகள்', 'அடிப்பகுதிகளில் வெள்ளை பூஞ்சை வளர்ச்சி', 'அழுகும் பழம்/கிழங்குகள்']
-      : ['Large brown blotches on leaves', 'White fungal growth on undersides', 'Rotting fruit/tubers'],
+        ? ['இலைகளில் பெரிய பழுப்பு நிற கறைகள்', 'அடிப்பகுதிகளில் வெள்ளை பூஞ்சை வளர்ச்சி', 'அழுகும் பழம்/கிழங்குகள்']
+        : ['Large brown blotches on leaves', 'White fungal growth on undersides', 'Rotting fruit/tubers'],
     treatment: lang === 'hi'
       ? ['संक्रमित पौधों को तुरंत नष्ट करें (खाद न बनाएं)।', 'निवारक कवकनाशी लागू करें।', 'अगले सीजन में प्रतिरोधी किस्में लगाएं।']
       : lang === 'ta'
-      ? ['பாதிக்கப்பட்ட தாவரங்களை உடனடியாக அழிக்கவும்.', 'தடுப்பு பூஞ்சைக் கொல்லியைப் பயன்படுத்துங்கள்.', 'அடுத்த பருவத்தில் எதிர்ப்பு ரகங்களை நடவும்.']
-      : ['Destroy infected plants immediately (do not compost).', 'Apply preventive fungicide.', 'Plant resistant varieties next season.'],
+        ? ['பாதிக்கப்பட்ட தாவரங்களை உடனடியாக அழிக்கவும்.', 'தடுப்பு பூஞ்சைக் கொல்லியைப் பயன்படுத்துங்கள்.', 'அடுத்த பருவத்தில் எதிர்ப்பு ரகங்களை நடவும்.']
+        : ['Destroy infected plants immediately (do not compost).', 'Apply preventive fungicide.', 'Plant resistant varieties next season.'],
     icon: <Activity className="w-12 h-12 text-rose-600" />
   }
 ];
@@ -177,11 +176,11 @@ const getGuideData = (lang) => [
   {
     title: lang === 'hi' ? "पानी देने की मूल बातें" : lang === 'ta' ? "நீர்ப்பாசன அடிப்படைகள்" : "Watering Basics",
     icon: <Droplets className="w-6 h-6 text-blue-500" />,
-    content: lang === 'hi' 
+    content: lang === 'hi'
       ? "ज़्यादातर पौधे बार-बार थोड़ा पानी देने के बजाय गहरा, कभी-कभार पानी देना पसंद करते हैं। अपनी उंगली को एक इंच गहरा डालकर मिट्टी की नमी की जाँच करें।"
       : lang === 'ta'
-      ? "பெரும்பாலான தாவரங்கள் அடிக்கடி லேசாக நீர் ஊற்றுவதை விட ஆழமான, எப்போதாவது நீர் பாய்ச்சுவதை விரும்புகின்றன. உங்கள் விரலை ஒரு அங்குல ஆழத்தில் வைத்து மண் ஈரப்பதத்தை சரிபார்க்கவும்."
-      : "Most plants prefer deep, infrequent watering over frequent shallow splashes. Check soil moisture by inserting your finger an inch deep."
+        ? "பெரும்பாலான தாவரங்கள் அடிக்கடி லேசாக நீர் ஊற்றுவதை விட ஆழமான, எப்போதாவது நீர் பாய்ச்சுவதை விரும்புகின்றன. உங்கள் விரலை ஒரு அங்குல ஆழத்தில் வைத்து மண் ஈரப்பதத்தை சரிபார்க்கவும்."
+        : "Most plants prefer deep, infrequent watering over frequent shallow splashes. Check soil moisture by inserting your finger an inch deep."
   },
   {
     title: lang === 'hi' ? "प्रकाश की आवश्यकताएं" : lang === 'ta' ? "விளக்கு தேவைகள்" : "Lighting Needs",
@@ -189,8 +188,8 @@ const getGuideData = (lang) => [
     content: lang === 'hi'
       ? "पूर्व की ओर वाली खिड़कियां कोमल सुबह की रोशनी प्रदान करती हैं, जबकि दक्षिण की ओर वाली खिड़कियां धूप पसंद करने वाले पौधों के लिए सबसे तेज तीव्रता प्रदान करती हैं।"
       : lang === 'ta'
-      ? "கிழக்கு நோக்கிய ஜன்னல்கள் மென்மையான காலை ஒளியை வழங்குகின்றன, அதே நேரத்தில் தெற்கு நோக்கிய ஜன்னல்கள் சூரியனை விரும்பும் தாவரங்களுக்கு வலுவான தீவிரத்தை வழங்குகின்றன."
-      : "East-facing windows provide gentle morning light, while south-facing windows offer the strongest intensity for sun-loving plants."
+        ? "கிழக்கு நோக்கிய ஜன்னல்கள் மென்மையான காலை ஒளியை வழங்குகின்றன, அதே நேரத்தில் தெற்கு நோக்கிய ஜன்னல்கள் சூரியனை விரும்பும் தாவரங்களுக்கு வலுவான தீவிரத்தை வழங்குகின்றன."
+        : "East-facing windows provide gentle morning light, while south-facing windows offer the strongest intensity for sun-loving plants."
   },
   {
     title: lang === 'hi' ? "कीट की रोकथाम" : lang === 'ta' ? "பூச்சி தடுப்பு" : "Pest Prevention",
@@ -198,8 +197,8 @@ const getGuideData = (lang) => [
     content: lang === 'hi'
       ? "नियमित रूप से पत्तियों के नीचे की तरफ निरीक्षण करें। पत्तियों को गीले कपड़े से पोंछने से धूल जमा होने से रोका जा सकता है और घुन को हतोत्साहित किया जा सकता है।"
       : lang === 'ta'
-      ? "இலைகளின் அடிப்பகுதியை தவறாமல் பரிசோதிக்கவும். ஈரமான துணியால் இலைகளைத் துடைப்பது தூசி தேங்குவதைத் தடுக்கும் மற்றும் பூச்சிகளை ஊக்கப்படுத்தாது."
-      : "Regularly inspect the undersides of leaves. Wiping leaves with a damp cloth can prevent dust buildup and discourage mites."
+        ? "இலைகளின் அடிப்பகுதியை தவறாமல் பரிசோதிக்கவும். ஈரமான துணியால் இலைகளைத் துடைப்பது தூசி தேங்குவதைத் தடுக்கும் மற்றும் பூச்சிகளை ஊக்கப்படுத்தாது."
+        : "Regularly inspect the undersides of leaves. Wiping leaves with a damp cloth can prevent dust buildup and discourage mites."
   }
 ];
 
@@ -207,11 +206,11 @@ const getGovernmentSchemes = (lang) => [
   {
     id: 1,
     title: lang === 'hi' ? "पीएम फसल बीमा योजना (PMFBY)" : lang === 'ta' ? "PM பயிர் காப்பீட்டுத் திட்டம் (PMFBY)" : "PM Fasal Bima Yojana (PMFBY)",
-    description: lang === 'hi' 
+    description: lang === 'hi'
       ? "फसल बीमा योजना जो अप्रत्याशित घटनाओं से उत्पन्न फसल हानि/क्षति से पीड़ित किसानों को वित्तीय सहायता प्रदान करती है।"
       : lang === 'ta'
-      ? "எதிர்பாராத நிகழ்வுகளால் ஏற்படும் பயிர் இழப்பு/சேதத்தால் பாதிக்கப்பட்ட விவசாயிகளுக்கு நிதியுதவி வழங்கும் பயிர் காப்பீட்டுத் திட்டம்."
-      : "Crop insurance scheme that provides financial support to farmers suffering crop loss/damage arising out of unforeseen events.",
+        ? "எதிர்பாராத நிகழ்வுகளால் ஏற்படும் பயிர் இழப்பு/சேதத்தால் பாதிக்கப்பட்ட விவசாயிகளுக்கு நிதியுதவி வழங்கும் பயிர் காப்பீட்டுத் திட்டம்."
+        : "Crop insurance scheme that provides financial support to farmers suffering crop loss/damage arising out of unforeseen events.",
     icon: <ShieldCheck className="w-6 h-6 text-blue-600" />,
     link: "https://pmfby.gov.in/"
   },
@@ -221,8 +220,8 @@ const getGovernmentSchemes = (lang) => [
     description: lang === 'hi'
       ? "सभी भूमिधारी किसान परिवारों को प्रति वर्ष ₹6,000 की आय सहायता, जिसका उद्देश्य कृषि के लिए इनपुट खरीदने में मदद करना है।"
       : lang === 'ta'
-      ? "அனைத்து நிலம் வைத்திருக்கும் விவசாயக் குடும்பங்களுக்கும் ஆண்டுக்கு ₹6,000 வருமான ஆதரவு."
-      : "Income support of ₹6,000 per year to all landholding farmer families, aimed at helping you procure inputs for agriculture.",
+        ? "அனைத்து நிலம் வைத்திருக்கும் விவசாயக் குடும்பங்களுக்கும் ஆண்டுக்கு ₹6,000 வருமான ஆதரவு."
+        : "Income support of ₹6,000 per year to all landholding farmer families, aimed at helping you procure inputs for agriculture.",
     icon: <HeartHandshake className="w-6 h-6 text-green-600" />,
     link: "https://pmkisan.gov.in/"
   },
@@ -232,8 +231,8 @@ const getGovernmentSchemes = (lang) => [
     description: lang === 'hi'
       ? "खेती और अन्य जरूरतों के लिए बैंकिंग प्रणाली से पर्याप्त और समय पर ऋण सहायता प्रदान करता है।"
       : lang === 'ta'
-      ? "சாகுபடி மற்றும் பிறத் தேவைகளுக்கு வங்கி அமைப்பிலிருந்து போதுமான மற்றும் சரியான நேரத்தில் கடன் ஆதரவை வழங்குகிறது."
-      : "Provides adequate and timely credit support from the banking system for cultivation and other needs.",
+        ? "சாகுபடி மற்றும் பிறத் தேவைகளுக்கு வங்கி அமைப்பிலிருந்து போதுமான மற்றும் சரியான நேரத்தில் கடன் ஆதரவை வழங்குகிறது."
+        : "Provides adequate and timely credit support from the banking system for cultivation and other needs.",
     icon: <Leaf className="w-6 h-6 text-yellow-600" />,
     link: "https://myscheme.gov.in/schemes/kcc"
   }
@@ -589,19 +588,19 @@ const LocationMap = ({ lat, lng, className = "" }) => {
 
   return (
     <div className={`relative overflow-hidden border border-gray-200 shadow-sm bg-gray-50 ${className}`}>
-      <iframe 
-        width="100%" 
-        height="100%" 
-        frameBorder="0" 
-        scrolling="no" 
-        marginHeight="0" 
-        marginWidth="0" 
+      <iframe
+        width="100%"
+        height="100%"
+        frameBorder="0"
+        scrolling="no"
+        marginHeight="0"
+        marginWidth="0"
         src={`https://maps.google.com/maps?q=${lat},${lng}&z=15&output=embed`}
         title="Location Map"
         className="absolute inset-0 w-full h-full"
       />
       <div className="absolute bottom-2 right-2">
-        <a 
+        <a
           href={`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`}
           target="_blank"
           rel="noreferrer"
@@ -614,7 +613,7 @@ const LocationMap = ({ lat, lng, className = "" }) => {
   );
 };
 
- const WeatherWidget = ({ language, weather, loading, onActivate }) => {
+const WeatherWidget = ({ language, weather, loading, onActivate }) => {
   const t = TRANSLATIONS[language];
 
   if (loading) {
@@ -628,7 +627,7 @@ const LocationMap = ({ lat, lng, className = "" }) => {
 
   if (!weather) {
     return (
-      <div 
+      <div
         onClick={onActivate}
         className="w-full max-w-2xl bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-12 mx-auto flex items-center justify-between cursor-pointer hover:border-emerald-300 transition-colors group"
       >
@@ -702,437 +701,474 @@ const LocationMap = ({ lat, lng, className = "" }) => {
 };
 
 const Navbar = ({ setView, t, setShowLocationMenu, showLocationMenu, loadingWeather, globalLocation, detectLocation, manualLocationQuery, setManualLocationQuery, handleManualSearch, setShowLangMenu, showLangMenu, language, setLanguage }) => (
-    <nav className="flex items-center justify-between px-6 py-4 bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-emerald-100 print:hidden">
-      <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('landing')}>
-        <div className="bg-emerald-600 p-2 rounded-lg">
-          <Leaf className="w-5 h-5 text-white" />
-        </div>
-        <span className="text-xl font-bold text-gray-800 tracking-tight">{t.appTitle}</span>
+  <nav className="flex items-center justify-between px-6 py-4 bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-emerald-100 print:hidden">
+    <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('landing')}>
+      <div className="bg-emerald-600 p-2 rounded-lg">
+        <Leaf className="w-5 h-5 text-white" />
       </div>
-      <div className="flex items-center gap-2">
-        <div className="relative">
-          <button 
-            onClick={() => setShowLocationMenu(!showLocationMenu)}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 flex items-center gap-1"
-            title={t.detectLoc}
-          >
-            <Crosshair className={`w-5 h-5 ${loadingWeather ? 'animate-spin' : ''}`} />
-            <span className="text-xs font-semibold hidden sm:block uppercase max-w-[100px] truncate">
-              {loadingWeather ? '...' : (globalLocation ? globalLocation.name.split(',')[0] : t.detectLoc)}
-            </span>
-          </button>
-
-          {showLocationMenu && (
-            <>
-              <div 
-                className="fixed inset-0 z-10" 
-                onClick={() => setShowLocationMenu(false)} 
-              />
-              <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 p-4 z-20 overflow-hidden animate-fade-in">
-                <h4 className="text-sm font-bold text-gray-700 mb-3">{t.manualLoc}</h4>
-                
-                <button 
-                  onClick={detectLocation}
-                  className="w-full flex items-center justify-center gap-2 py-2 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors mb-3 text-sm font-semibold"
-                >
-                  <Crosshair className="w-4 h-4" />
-                  {t.useGPS}
-                </button>
-
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="h-px bg-gray-200 flex-1"></div>
-                  <span className="text-xs text-gray-400">OR</span>
-                  <div className="h-px bg-gray-200 flex-1"></div>
-                </div>
-
-                <div className="flex gap-2">
-                  <input 
-                    type="text" 
-                    value={manualLocationQuery}
-                    onChange={(e) => setManualLocationQuery(e.target.value)}
-                    placeholder={t.enterCity}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    onKeyDown={(e) => e.key === 'Enter' && handleManualSearch(manualLocationQuery)}
-                  />
-                  <button 
-                    onClick={() => handleManualSearch(manualLocationQuery)}
-                    disabled={!manualLocationQuery.trim()}
-                    className="p-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors"
-                  >
-                    <Search className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-
-        <div className="relative">
-          <button 
-            onClick={() => setShowLangMenu(!showLangMenu)}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 flex items-center gap-1"
-          >
-            <Globe className="w-5 h-5" />
-            <span className="text-xs font-semibold uppercase">{language}</span>
-          </button>
-          
-          {showLangMenu && (
-            <>
-              <div className="fixed inset-0 z-10" onClick={() => setShowLangMenu(false)} />
-              <div className="absolute right-0 top-full mt-2 w-32 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-20 overflow-hidden animate-fade-in">
-                <button onClick={() => { setLanguage('en'); setShowLangMenu(false); }} className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${language === 'en' ? 'text-emerald-600 font-bold bg-emerald-50' : 'text-gray-700'}`}>English</button>
-                <button onClick={() => { setLanguage('hi'); setShowLangMenu(false); }} className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${language === 'hi' ? 'text-emerald-600 font-bold bg-emerald-50' : 'text-gray-700'}`}>हिंदी (Hindi)</button>
-                <button onClick={() => { setLanguage('ta'); setShowLangMenu(false); }} className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${language === 'ta' ? 'text-emerald-600 font-bold bg-emerald-50' : 'text-gray-700'}`}>தமிழ் (Tamil)</button>
-              </div>
-            </>
-          )}
-        </div>
-        
-        <button 
-          onClick={() => setView('guide')}
-          className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
-          title={t.viewGuides}
+      <span className="text-xl font-bold text-gray-800 tracking-tight">{t.appTitle}</span>
+    </div>
+    <div className="flex items-center gap-2">
+      <div className="relative">
+        <button
+          onClick={() => setShowLocationMenu(!showLocationMenu)}
+          className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 flex items-center gap-1"
+          title={t.detectLoc}
         >
-          <BookOpen className="w-5 h-5" />
+          <Crosshair className={`w-5 h-5 ${loadingWeather ? 'animate-spin' : ''}`} />
+          <span className="text-xs font-semibold hidden sm:block uppercase max-w-[100px] truncate">
+            {loadingWeather ? '...' : (globalLocation ? globalLocation.name.split(',')[0] : t.detectLoc)}
+          </span>
         </button>
+
+        {showLocationMenu && (
+          <>
+            <div
+              className="fixed inset-0 z-10"
+              onClick={() => setShowLocationMenu(false)}
+            />
+            <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 p-4 z-20 overflow-hidden animate-fade-in">
+              <h4 className="text-sm font-bold text-gray-700 mb-3">{t.manualLoc}</h4>
+
+              <button
+                onClick={detectLocation}
+                className="w-full flex items-center justify-center gap-2 py-2 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors mb-3 text-sm font-semibold"
+              >
+                <Crosshair className="w-4 h-4" />
+                {t.useGPS}
+              </button>
+
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-px bg-gray-200 flex-1"></div>
+                <span className="text-xs text-gray-400">OR</span>
+                <div className="h-px bg-gray-200 flex-1"></div>
+              </div>
+
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={manualLocationQuery}
+                  onChange={(e) => setManualLocationQuery(e.target.value)}
+                  placeholder={t.enterCity}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  onKeyDown={(e) => e.key === 'Enter' && handleManualSearch(manualLocationQuery)}
+                />
+                <button
+                  onClick={() => handleManualSearch(manualLocationQuery)}
+                  disabled={!manualLocationQuery.trim()}
+                  className="p-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+                >
+                  <Search className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
-    </nav>
+
+      <div className="relative">
+        <button
+          onClick={() => setShowLangMenu(!showLangMenu)}
+          className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 flex items-center gap-1"
+        >
+          <Globe className="w-5 h-5" />
+          <span className="text-xs font-semibold uppercase">{language}</span>
+        </button>
+
+        {showLangMenu && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setShowLangMenu(false)} />
+            <div className="absolute right-0 top-full mt-2 w-32 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-20 overflow-hidden animate-fade-in">
+              <button onClick={() => { setLanguage('en'); setShowLangMenu(false); }} className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${language === 'en' ? 'text-emerald-600 font-bold bg-emerald-50' : 'text-gray-700'}`}>English</button>
+              <button onClick={() => { setLanguage('hi'); setShowLangMenu(false); }} className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${language === 'hi' ? 'text-emerald-600 font-bold bg-emerald-50' : 'text-gray-700'}`}>हिंदी (Hindi)</button>
+              <button onClick={() => { setLanguage('ta'); setShowLangMenu(false); }} className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${language === 'ta' ? 'text-emerald-600 font-bold bg-emerald-50' : 'text-gray-700'}`}>தமிழ் (Tamil)</button>
+            </div>
+          </>
+        )}
+      </div>
+
+      <button
+        onClick={() => setView('guide')}
+        className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
+        title={t.viewGuides}
+      >
+        <BookOpen className="w-5 h-5" />
+      </button>
+    </div>
+  </nav>
 );
 
 const ChatWidget = ({ t, language }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [messages, setMessages] = useState([]);
-    const [input, setInput] = useState("");
-    const messagesEndRef = useRef(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const messagesEndRef = useRef(null);
 
-    useEffect(() => {
-        setMessages([{ id: 1, text: t.chatWelcome, sender: 'ai' }]);
-    }, [language]);
+  useEffect(() => {
+    setMessages([{ id: 1, text: t.chatWelcome, sender: 'ai' }]);
+  }, [language]);
 
-    useEffect(() => { if (isOpen) messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, isOpen]);
+  useEffect(() => { if (isOpen) messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, isOpen]);
 
-    const handleSend = (e) => {
-      e.preventDefault();
-      if (!input.trim()) return;
-      const userMsg = { id: Date.now(), text: input, sender: 'user' };
-      setMessages(prev => [...prev, userMsg]);
-      setInput("");
-      setTimeout(() => {
-        let responseText = "";
-        if (language === 'hi') responseText = "पौधों के बारे में यह एक अच्छा सवाल है! मिट्टी की नमी और रोशनी की जाँच ज़रूर करें।";
-        else if (language === 'ta') responseText = "தாவரங்களைப் பற்றிய அருமையான கேள்வி! மண் ஈரப்பதம் மற்றும் ஒளி நிலைகளை சரிபார்க்கவும்.";
-        else responseText = "That's a great question about plants! Make sure to check the soil moisture and light conditions.";
-        
-        setMessages(prev => [...prev, { id: Date.now() + 1, text: responseText, sender: 'ai' }]);
-      }, 1000);
-    };
+  const handleSend = async (e) => {
+    e.preventDefault();
+    if (!input.trim()) return;
 
-    return (
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end print:hidden">
-        {isOpen && (
-          <div className="mb-4 w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-fade-in flex flex-col max-h-[500px]">
-            <div className="bg-emerald-600 p-4 flex items-center justify-between text-white">
-              <div className="flex items-center gap-2">
-                <div className="bg-white/20 p-1.5 rounded-lg"><Bot className="w-5 h-5" /></div>
-                <div>
-                    <h3 className="font-bold text-sm">{t.botName}</h3>
-                    <div className="flex items-center gap-1.5"><span className="w-2 h-2 bg-emerald-300 rounded-full animate-pulse"></span><span className="text-[10px] opacity-90">{t.chatOnline}</span></div>
-                </div>
+    const userMsg = { id: Date.now(), text: input, sender: 'user' };
+    setMessages(prev => [...prev, userMsg]);
+    setInput("");
+
+    // Add temporary loading message
+    const loadingId = Date.now() + 1;
+    setMessages(prev => [...prev, { id: loadingId, text: language === 'hi' ? 'सोच रहा हूँ...' : language === 'ta' ? 'யோசிக்கிறேன்...' : 'Thinking...', sender: 'ai', loading: true }]);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/chat/message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: userMsg.text,
+          language: language
+        }),
+      });
+
+      const data = await response.json();
+
+      // Remove loading message and add real response
+      setMessages(prev => prev.filter(msg => msg.id !== loadingId));
+
+      if (data.success) {
+        setMessages(prev => [...prev, { id: Date.now() + 2, text: data.data.response, sender: 'ai' }]);
+      } else {
+        setMessages(prev => [...prev, { id: Date.now() + 2, text: "Sorry, I encountered an error. Please try again.", sender: 'ai', error: true }]);
+      }
+    } catch (error) {
+      console.error('Chat error:', error);
+      setMessages(prev => prev.filter(msg => msg.id !== loadingId));
+      setMessages(prev => [...prev, { id: Date.now() + 2, text: "Network error. Please check your connection.", sender: 'ai', error: true }]);
+    }
+  };
+
+  return (
+    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end print:hidden">
+      {isOpen && (
+        <div className="mb-4 w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-fade-in flex flex-col max-h-[500px]">
+          <div className="bg-emerald-600 p-4 flex items-center justify-between text-white">
+            <div className="flex items-center gap-2">
+              <div className="bg-white/20 p-1.5 rounded-lg"><Bot className="w-5 h-5" /></div>
+              <div>
+                <h3 className="font-bold text-sm">{t.botName}</h3>
+                <div className="flex items-center gap-1.5"><span className="w-2 h-2 bg-emerald-300 rounded-full animate-pulse"></span><span className="text-[10px] opacity-90">{t.chatOnline}</span></div>
               </div>
-              <button onClick={() => setIsOpen(false)} className="p-1 hover:bg-white/20 rounded-full transition-colors"><X className="w-5 h-5" /></button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4 h-80">
-              {messages.map((msg) => (
-                <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.sender === 'user' ? 'bg-emerald-600 text-white rounded-br-none' : 'bg-white border border-gray-200 text-gray-700 rounded-bl-none shadow-sm'}`}>{msg.text}</div>
-                </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
-            <form onSubmit={handleSend} className="p-3 bg-white border-t border-gray-100 flex gap-2">
-              <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder={t.chatPlaceholder} className="flex-1 bg-gray-100 text-sm rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
-              <button type="submit" disabled={!input.trim()} className="bg-emerald-600 text-white p-2.5 rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"><Send className="w-4 h-4" /></button>
-            </form>
+            <button onClick={() => setIsOpen(false)} className="p-1 hover:bg-white/20 rounded-full transition-colors"><X className="w-5 h-5" /></button>
           </div>
-        )}
-        <button onClick={() => setIsOpen(!isOpen)} className={`p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 ${isOpen ? 'bg-gray-200 text-gray-600 rotate-90' : 'bg-emerald-600 text-white'}`}>
-          {isOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
-        </button>
-      </div>
-    );
+          <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4 h-80">
+            {messages.map((msg) => (
+              <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.sender === 'user' ? 'bg-emerald-600 text-white rounded-br-none' : 'bg-white border border-gray-200 text-gray-700 rounded-bl-none shadow-sm'}`}>{msg.text}</div>
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+          <form onSubmit={handleSend} className="p-3 bg-white border-t border-gray-100 flex gap-2">
+            <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder={t.chatPlaceholder} className="flex-1 bg-gray-100 text-sm rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
+            <button type="submit" disabled={!input.trim()} className="bg-emerald-600 text-white p-2.5 rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"><Send className="w-4 h-4" /></button>
+          </form>
+        </div>
+      )}
+      <button onClick={() => setIsOpen(!isOpen)} className={`p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 ${isOpen ? 'bg-gray-200 text-gray-600 rotate-90' : 'bg-emerald-600 text-white'}`}>
+        {isOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
+      </button>
+    </div>
+  );
 };
 
 // LandingPage Component
-const LandingPage = ({ setView, t, setShowLocationMenu, weather, loadingWeather, language }) => (
-    <div className="flex flex-col items-center justify-center min-h-[85vh] px-6 text-center animate-fade-in print:hidden">
-      <div className="bg-emerald-50 p-6 rounded-full mb-8 animate-bounce-slow ring-1 ring-emerald-100">
-        <Sprout className="w-16 h-16 text-emerald-600" />
-      </div>
-      
-      <h1 className="text-4xl md:text-6xl font-extrabold text-gray-900 mb-6 tracking-tight leading-tight">
-        {t.heroTitle} <br/>
-        <span className="text-emerald-600">{t.heroSubtitle}</span>
-      </h1>
-      
-      <p className="text-lg text-gray-600 max-w-2xl mb-10 leading-relaxed">
-        {t.heroDesc}
-      </p>
+const LandingPage = ({ setView, t, setShowLocationMenu, weather, loadingWeather, language, modelLoaded, loadingModel }) => (
+  <div className="flex flex-col items-center justify-center min-h-[85vh] px-6 text-center animate-fade-in print:hidden">
+    <div className="bg-emerald-50 p-6 rounded-full mb-8 animate-bounce-slow ring-1 ring-emerald-100">
+      <Sprout className="w-16 h-16 text-emerald-600" />
+    </div>
 
-      <div className="flex flex-col md:flex-row gap-4 mb-16 w-full max-w-2xl">
-        <button 
-          onClick={() => setView('dashboard')}
-          className="flex-1 px-4 py-4 bg-emerald-600 text-white font-bold text-lg rounded-2xl shadow-xl shadow-emerald-200 hover:shadow-2xl hover:bg-emerald-700 transition-all hover:-translate-y-1 overflow-hidden group"
-        >
-          <span className="flex items-center justify-center gap-2">
-            {t.startDiag} <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          </span>
-        </button>
-        <button 
-          onClick={() => setView('soil-analysis')}
-          className="flex-1 px-4 py-4 bg-amber-600 text-white font-bold text-lg rounded-2xl shadow-xl shadow-amber-200 hover:shadow-2xl hover:bg-amber-700 transition-all hover:-translate-y-1 overflow-hidden group"
-        >
-          <span className="flex items-center justify-center gap-2">
-            <Beaker className="w-5 h-5" /> {t.startSoil}
-          </span>
-        </button>
-        <button 
-          onClick={() => setView('kisan-sahayak')}
-          className="flex-1 px-4 py-4 bg-emerald-900 text-emerald-50 font-bold text-lg rounded-2xl shadow-xl shadow-emerald-900/20 hover:shadow-2xl hover:bg-emerald-800 transition-all hover:-translate-y-1 overflow-hidden"
-        >
-          <span className="flex items-center justify-center gap-2">
-             <HeartHandshake className="w-5 h-5" /> {t.kisanSupport}
-          </span>
-        </button>
-      </div>
+    <h1 className="text-4xl md:text-6xl font-extrabold text-gray-900 mb-6 tracking-tight leading-tight">
+      {t.heroTitle} <br />
+      <span className="text-emerald-600">{t.heroSubtitle}</span>
+    </h1>
 
-      <div className="w-full max-w-2xl mb-8">
-        <button 
-          onClick={() => setView('map')}
-          className="w-full bg-white border border-gray-200 text-emerald-700 font-bold py-3 rounded-xl shadow-sm hover:shadow-md hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
-        >
-          <MapIcon className="w-5 h-5" /> {t.findStore}
-        </button>
-      </div>
+    <p className="text-lg text-gray-600 max-w-2xl mb-10 leading-relaxed">
+      {t.heroDesc}
+    </p>
 
-      <WeatherWidget 
-        language={language} 
-        weather={weather} 
-        loading={loadingWeather} 
-        onActivate={() => setShowLocationMenu(true)}
-      />
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl">
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-          <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-4 mx-auto text-blue-600"><Scan className="w-6 h-6" /></div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">{t.instAnalysis}</h3>
-          <p className="text-sm text-gray-500">{t.instDesc}</p>
-        </div>
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-          <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center mb-4 mx-auto text-purple-600"><Stethoscope className="w-6 h-6" /></div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">{t.expCure}</h3>
-          <p className="text-sm text-gray-500">{t.expDesc}</p>
-        </div>
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-          <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center mb-4 mx-auto text-amber-600"><CheckCircle className="w-6 h-6" /></div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">{t.acc}</h3>
-          <p className="text-sm text-gray-500">{t.accDesc}</p>
-        </div>
+    {/* AI Model Status Indicator */}
+    <div className="flex items-center gap-2 mb-8 bg-white/50 backdrop-blur-sm px-4 py-2 rounded-full border border-emerald-100 shadow-sm animate-fade-in">
+      <div className={`w-2 h-2 rounded-full ${modelLoaded ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : loadingModel ? 'bg-amber-400 animate-pulse' : 'bg-gray-400'}`}></div>
+      <span className="text-xs font-bold text-gray-600 tracking-wide uppercase">
+        {modelLoaded
+          ? (language === 'hi' ? "AI मॉडल तैयार (ऑफलाइन सक्षम)" : language === 'ta' ? "AI மாதிரி தயார் (ஆஃப்லைன்)" : "AI Model Ready (Offline Capable)")
+          : loadingModel
+            ? (language === 'hi' ? "AI मॉडल लोड हो रहा है..." : language === 'ta' ? "AI மாதிரி ஏற்றப்படுகிறது..." : "Loading AI Model...")
+            : (language === 'hi' ? "ऑनलाइन AI सक्रिय" : language === 'ta' ? "ஆன்லைன் AI செயல்" : "Online AI Active")}
+      </span>
+    </div>
+
+    <div className="flex flex-col md:flex-row gap-4 mb-16 w-full max-w-2xl">
+      <button
+        onClick={() => setView('dashboard')}
+        className="flex-1 px-4 py-4 bg-emerald-600 text-white font-bold text-lg rounded-2xl shadow-xl shadow-emerald-200 hover:shadow-2xl hover:bg-emerald-700 transition-all hover:-translate-y-1 overflow-hidden group"
+      >
+        <span className="flex items-center justify-center gap-2">
+          {t.startDiag} <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+        </span>
+      </button>
+      <button
+        onClick={() => setView('soil-analysis')}
+        className="flex-1 px-4 py-4 bg-amber-600 text-white font-bold text-lg rounded-2xl shadow-xl shadow-amber-200 hover:shadow-2xl hover:bg-amber-700 transition-all hover:-translate-y-1 overflow-hidden group"
+      >
+        <span className="flex items-center justify-center gap-2">
+          <Beaker className="w-5 h-5" /> {t.startSoil}
+        </span>
+      </button>
+      <button
+        onClick={() => setView('kisan-sahayak')}
+        className="flex-1 px-4 py-4 bg-emerald-900 text-emerald-50 font-bold text-lg rounded-2xl shadow-xl shadow-emerald-900/20 hover:shadow-2xl hover:bg-emerald-800 transition-all hover:-translate-y-1 overflow-hidden"
+      >
+        <span className="flex items-center justify-center gap-2">
+          <HeartHandshake className="w-5 h-5" /> {t.kisanSupport}
+        </span>
+      </button>
+    </div>
+
+    <div className="w-full max-w-2xl mb-8">
+      <button
+        onClick={() => setView('map')}
+        className="w-full bg-white border border-gray-200 text-emerald-700 font-bold py-3 rounded-xl shadow-sm hover:shadow-md hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+      >
+        <MapIcon className="w-5 h-5" /> {t.findStore}
+      </button>
+    </div>
+
+    <WeatherWidget
+      language={language}
+      weather={weather}
+      loading={loadingWeather}
+      onActivate={() => setShowLocationMenu(true)}
+    />
+
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl">
+      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+        <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-4 mx-auto text-blue-600"><Scan className="w-6 h-6" /></div>
+        <h3 className="text-lg font-bold text-gray-900 mb-2">{t.instAnalysis}</h3>
+        <p className="text-sm text-gray-500">{t.instDesc}</p>
+      </div>
+      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+        <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center mb-4 mx-auto text-purple-600"><Stethoscope className="w-6 h-6" /></div>
+        <h3 className="text-lg font-bold text-gray-900 mb-2">{t.expCure}</h3>
+        <p className="text-sm text-gray-500">{t.expDesc}</p>
+      </div>
+      <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+        <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center mb-4 mx-auto text-amber-600"><CheckCircle className="w-6 h-6" /></div>
+        <h3 className="text-lg font-bold text-gray-900 mb-2">{t.acc}</h3>
+        <p className="text-sm text-gray-500">{t.accDesc}</p>
       </div>
     </div>
+  </div>
 );
 
 const Dashboard = ({ setView, t, fileInputRef, handleImageUpload }) => (
-    <div className="flex flex-col items-center justify-center pt-12 px-6 animate-fade-in print:hidden">
-      <div className="flex items-center gap-2 mb-8 text-gray-400 text-sm font-medium uppercase tracking-wider">
-        <div className="h-px w-8 bg-gray-300"></div>{t.diagTools}<div className="h-px w-8 bg-gray-300"></div>
-      </div>
-      <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8 text-center">{t.scanPrompt}</h2>
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
-        <div className="p-8 border-b border-dashed border-gray-200 bg-gray-50/50">
-          <div onClick={() => fileInputRef.current?.click()} className="border-2 border-emerald-500 border-dashed rounded-2xl h-48 flex flex-col items-center justify-center cursor-pointer hover:bg-emerald-50 transition-all group bg-white">
-            <div className="p-4 bg-emerald-100 rounded-full mb-4 group-hover:scale-110 transition-transform"><Upload className="w-8 h-8 text-emerald-600" /></div>
-            <span className="font-bold text-gray-800 text-lg">{t.uploadImg}</span>
-            <span className="text-sm text-gray-400 mt-1">{t.uploadDesc}</span>
-          </div>
-          <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
-        </div>
-        <div className="p-6 bg-white">
-          <button onClick={() => setView('camera')} className="w-full flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 transition-colors border border-gray-200 group">
-            <div className="flex items-center gap-4">
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg group-hover:bg-blue-100 transition-colors"><Camera className="w-6 h-6" /></div>
-              <div className="text-left"><span className="block font-semibold text-gray-800">{t.useCam}</span><span className="text-xs text-gray-500">{t.camDesc}</span></div>
-            </div>
-            <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-gray-600" />
-          </button>
-        </div>
-      </div>
-      <button onClick={() => setView('landing')} className="mt-12 text-gray-400 hover:text-gray-600 text-sm font-medium flex items-center gap-2 transition-colors"><ArrowLeft className="w-4 h-4" /> {t.backHome}</button>
+  <div className="flex flex-col items-center justify-center pt-12 px-6 animate-fade-in print:hidden">
+    <div className="flex items-center gap-2 mb-8 text-gray-400 text-sm font-medium uppercase tracking-wider">
+      <div className="h-px w-8 bg-gray-300"></div>{t.diagTools}<div className="h-px w-8 bg-gray-300"></div>
     </div>
+    <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8 text-center">{t.scanPrompt}</h2>
+    <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+      <div className="p-8 border-b border-dashed border-gray-200 bg-gray-50/50">
+        <div onClick={() => fileInputRef.current?.click()} className="border-2 border-emerald-500 border-dashed rounded-2xl h-48 flex flex-col items-center justify-center cursor-pointer hover:bg-emerald-50 transition-all group bg-white">
+          <div className="p-4 bg-emerald-100 rounded-full mb-4 group-hover:scale-110 transition-transform"><Upload className="w-8 h-8 text-emerald-600" /></div>
+          <span className="font-bold text-gray-800 text-lg">{t.uploadImg}</span>
+          <span className="text-sm text-gray-400 mt-1">{t.uploadDesc}</span>
+        </div>
+        <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
+      </div>
+      <div className="p-6 bg-white">
+        <button onClick={() => setView('camera')} className="w-full flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 transition-colors border border-gray-200 group">
+          <div className="flex items-center gap-4">
+            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg group-hover:bg-blue-100 transition-colors"><Camera className="w-6 h-6" /></div>
+            <div className="text-left"><span className="block font-semibold text-gray-800">{t.useCam}</span><span className="text-xs text-gray-500">{t.camDesc}</span></div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-gray-600" />
+        </button>
+      </div>
+    </div>
+    <button onClick={() => setView('landing')} className="mt-12 text-gray-400 hover:text-gray-600 text-sm font-medium flex items-center gap-2 transition-colors"><ArrowLeft className="w-4 h-4" /> {t.backHome}</button>
+  </div>
 );
 
 const CameraView = ({ setView, t, setSelectedImage }) => {
-    const videoRef = useRef(null);
-    const canvasRef = useRef(null);
-    const [hasPermission, setHasPermission] = useState(null);
-    const [facingMode, setFacingMode] = useState('environment');
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const [hasPermission, setHasPermission] = useState(null);
+  const [facingMode, setFacingMode] = useState('environment');
 
-    useEffect(() => {
-      let stream = null;
-      const startCamera = async () => {
-        try {
-          if (videoRef.current && videoRef.current.srcObject) {
-            const tracks = videoRef.current.srcObject.getTracks();
-            tracks.forEach(track => track.stop());
-          }
-          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } });
-          if (videoRef.current) { videoRef.current.srcObject = stream; setHasPermission(true); }
-        } catch (err) { setHasPermission(false); }
-      };
-      startCamera();
-      return () => { if (stream) stream.getTracks().forEach(track => track.stop()); };
-    }, [facingMode]);
-
-    const capturePhoto = () => {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      if (video && canvas) {
-        const context = canvas.getContext('2d');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        if (facingMode === 'user') { context.translate(canvas.width, 0); context.scale(-1, 1); }
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        setSelectedImage(canvas.toDataURL('image/jpeg'));
-        setView('analyze');
-      }
+  useEffect(() => {
+    let stream = null;
+    const startCamera = async () => {
+      try {
+        if (videoRef.current && videoRef.current.srcObject) {
+          const tracks = videoRef.current.srcObject.getTracks();
+          tracks.forEach(track => track.stop());
+        }
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } });
+        if (videoRef.current) { videoRef.current.srcObject = stream; setHasPermission(true); }
+      } catch (err) { setHasPermission(false); }
     };
+    startCamera();
+    return () => { if (stream) stream.getTracks().forEach(track => track.stop()); };
+  }, [facingMode]);
 
-    if (hasPermission === false) return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center animate-fade-in">
-          <div className="bg-red-100 p-4 rounded-full mb-4"><Camera className="w-8 h-8 text-red-500" /></div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">{t.camDenied}</h2>
-          <p className="text-gray-600 mb-6">{t.camDeniedDesc}</p>
-          <div className="flex gap-3">
-             <button onClick={() => setView('dashboard')} className="px-6 py-2 bg-gray-200 text-gray-700 rounded-xl font-medium">{t.goBack}</button>
-          </div>
-        </div>
-    );
+  const capturePhoto = () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (video && canvas) {
+      const context = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      if (facingMode === 'user') { context.translate(canvas.width, 0); context.scale(-1, 1); }
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      setSelectedImage(canvas.toDataURL('image/jpeg'));
+      setView('analyze');
+    }
+  };
 
-    return (
-      <div className="fixed inset-0 bg-black z-50 flex flex-col animate-fade-in">
-        <div className="flex-1 relative overflow-hidden flex items-center justify-center">
-          <video ref={videoRef} autoPlay playsInline className="absolute min-w-full min-h-full object-cover" style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }} />
-          <button onClick={() => setView('dashboard')} className="absolute top-6 right-6 p-2 bg-black/40 text-white rounded-full backdrop-blur-md"><X className="w-6 h-6" /></button>
-        </div>
-        <div className="h-32 bg-black flex items-center justify-center gap-8 pb-6">
-           <button onClick={() => setView('dashboard')} className="p-4 text-white/50 hover:text-white transition-colors"><span className="text-xs font-medium">{t.cancel}</span></button>
-           <button onClick={capturePhoto} className="w-16 h-16 rounded-full bg-white border-4 border-gray-300 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"><div className="w-12 h-12 rounded-full bg-emerald-500"></div></button>
-           <button onClick={() => setFacingMode(prev => prev === 'environment' ? 'user' : 'environment')} className="p-4 text-white/50 hover:text-white transition-colors flex flex-col items-center gap-1"><RefreshCw className="w-5 h-5" /><span className="text-[10px] font-medium">{t.flip}</span></button>
-        </div>
-        <canvas ref={canvasRef} className="hidden" />
+  if (hasPermission === false) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center animate-fade-in">
+      <div className="bg-red-100 p-4 rounded-full mb-4"><Camera className="w-8 h-8 text-red-500" /></div>
+      <h2 className="text-xl font-bold text-gray-900 mb-2">{t.camDenied}</h2>
+      <p className="text-gray-600 mb-6">{t.camDeniedDesc}</p>
+      <div className="flex gap-3">
+        <button onClick={() => setView('dashboard')} className="px-6 py-2 bg-gray-200 text-gray-700 rounded-xl font-medium">{t.goBack}</button>
       </div>
-    );
+    </div>
+  );
+
+  return (
+    <div className="fixed inset-0 bg-black z-50 flex flex-col animate-fade-in">
+      <div className="flex-1 relative overflow-hidden flex items-center justify-center">
+        <video ref={videoRef} autoPlay playsInline className="absolute min-w-full min-h-full object-cover" style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }} />
+        <button onClick={() => setView('dashboard')} className="absolute top-6 right-6 p-2 bg-black/40 text-white rounded-full backdrop-blur-md"><X className="w-6 h-6" /></button>
+      </div>
+      <div className="h-32 bg-black flex items-center justify-center gap-8 pb-6">
+        <button onClick={() => setView('dashboard')} className="p-4 text-white/50 hover:text-white transition-colors"><span className="text-xs font-medium">{t.cancel}</span></button>
+        <button onClick={capturePhoto} className="w-16 h-16 rounded-full bg-white border-4 border-gray-300 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"><div className="w-12 h-12 rounded-full bg-emerald-500"></div></button>
+        <button onClick={() => setFacingMode(prev => prev === 'environment' ? 'user' : 'environment')} className="p-4 text-white/50 hover:text-white transition-colors flex flex-col items-center gap-1"><RefreshCw className="w-5 h-5" /><span className="text-[10px] font-medium">{t.flip}</span></button>
+      </div>
+      <canvas ref={canvasRef} className="hidden" />
+    </div>
+  );
 };
 
 const GuideView = ({ setView, t, language }) => (
-    <div className="px-6 pb-12 w-full max-w-md mx-auto animate-fade-in">
-      <div className="flex items-center gap-2 mb-6 mt-2 print:hidden">
-        <button onClick={() => setView('landing')} className="p-2 hover:bg-gray-100 rounded-full"><ArrowLeft className="w-5 h-5 text-gray-600" /></button>
-        <h2 className="text-xl font-bold text-gray-900">{t.careGuide}</h2>
-      </div>
-      <div className="space-y-4">
-        {getGuideData(language).map((item, i) => (
-          <div key={i} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex gap-4">
-            <div className="shrink-0 w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center">{item.icon}</div>
-            <div><h3 className="font-bold text-gray-800 mb-1">{item.title}</h3><p className="text-sm text-gray-600 leading-relaxed">{item.content}</p></div>
-          </div>
-        ))}
-        <div className="mt-8">
-           <h3 className="text-lg font-bold text-gray-900 mb-4 px-2">{t.commonIssues}</h3>
-           <div className="grid gap-3">
-             {getDiseaseDB(language).filter(d => d.id !== 'healthy').map((d, i) => (
-               <div key={i} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-3">
-                 <div className="p-2 bg-gray-50 rounded-lg">{d.icon}</div>
-                 <div className="flex-1"><div className="font-semibold text-gray-800 text-sm">{d.name}</div><div className="text-xs text-gray-500 truncate">{d.symptoms[0]}</div></div>
-                 <ChevronRight className="w-4 h-4 text-gray-300" />
-               </div>
-             ))}
-           </div>
+  <div className="px-6 pb-12 w-full max-w-md mx-auto animate-fade-in">
+    <div className="flex items-center gap-2 mb-6 mt-2 print:hidden">
+      <button onClick={() => setView('landing')} className="p-2 hover:bg-gray-100 rounded-full"><ArrowLeft className="w-5 h-5 text-gray-600" /></button>
+      <h2 className="text-xl font-bold text-gray-900">{t.careGuide}</h2>
+    </div>
+    <div className="space-y-4">
+      {getGuideData(language).map((item, i) => (
+        <div key={i} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex gap-4">
+          <div className="shrink-0 w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center">{item.icon}</div>
+          <div><h3 className="font-bold text-gray-800 mb-1">{item.title}</h3><p className="text-sm text-gray-600 leading-relaxed">{item.content}</p></div>
+        </div>
+      ))}
+      <div className="mt-8">
+        <h3 className="text-lg font-bold text-gray-900 mb-4 px-2">{t.commonIssues}</h3>
+        <div className="grid gap-3">
+          {getDiseaseDB(language).filter(d => d.id !== 'healthy').map((d, i) => (
+            <div key={i} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-3">
+              <div className="p-2 bg-gray-50 rounded-lg">{d.icon}</div>
+              <div className="flex-1"><div className="font-semibold text-gray-800 text-sm">{d.name}</div><div className="text-xs text-gray-500 truncate">{d.symptoms[0]}</div></div>
+              <ChevronRight className="w-4 h-4 text-gray-300" />
+            </div>
+          ))}
         </div>
       </div>
     </div>
+  </div>
 );
 
 const AnalyzeView = ({ isAnalyzing, scanProgress, t, selectedImage, resetApp, startAnalysis }) => (
-    <div className="flex flex-col items-center justify-center min-h-[80vh] px-6 w-full max-w-md mx-auto animate-fade-in print:hidden">
-      <div className="relative w-full aspect-square bg-gray-900 rounded-3xl overflow-hidden shadow-2xl mb-8 group">
-        <img src={selectedImage} alt="Analysis" className="w-full h-full object-cover opacity-80" />
-        {isAnalyzing && (
-          <div className="absolute inset-0 z-10">
-            <div className="w-full h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_15px_rgba(52,211,153,0.8)] absolute top-0" style={{ top: `${scanProgress}%`, transition: 'top 0.1s linear' }} />
-            <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10"><span className="text-emerald-400 text-xs font-mono">{t.scanning} {scanProgress}%</span></div>
-          </div>
-        )}
-        {!isAnalyzing && <button onClick={resetApp} className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 backdrop-blur-md p-2 rounded-full text-white transition-colors"><X className="w-5 h-5" /></button>}
-      </div>
-      {!isAnalyzing ? (
-        <button onClick={startAnalysis} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-200 transition-all hover:scale-[1.02] flex items-center justify-center gap-2"><Scan className="w-5 h-5" />{t.runDiag}</button>
-      ) : (
-        <div className="w-full space-y-3">
-          <div className="flex justify-between text-sm font-medium text-gray-500"><span>{t.analyzing}</span><span>{scanProgress}%</span></div>
-          <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-emerald-500 transition-all duration-300 ease-out" style={{ width: `${scanProgress}%` }} /></div>
+  <div className="flex flex-col items-center justify-center min-h-[80vh] px-6 w-full max-w-md mx-auto animate-fade-in print:hidden">
+    <div className="relative w-full aspect-square bg-gray-900 rounded-3xl overflow-hidden shadow-2xl mb-8 group">
+      <img src={selectedImage} alt="Analysis" className="w-full h-full object-cover opacity-80" />
+      {isAnalyzing && (
+        <div className="absolute inset-0 z-10">
+          <div className="w-full h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_15px_rgba(52,211,153,0.8)] absolute top-0" style={{ top: `${scanProgress}%`, transition: 'top 0.1s linear' }} />
+          <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10"><span className="text-emerald-400 text-xs font-mono">{t.scanning} {scanProgress}%</span></div>
         </div>
       )}
+      {!isAnalyzing && <button onClick={resetApp} className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 backdrop-blur-md p-2 rounded-full text-white transition-colors"><X className="w-5 h-5" /></button>}
     </div>
+    {!isAnalyzing ? (
+      <button onClick={startAnalysis} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-200 transition-all hover:scale-[1.02] flex items-center justify-center gap-2"><Scan className="w-5 h-5" />{t.runDiag}</button>
+    ) : (
+      <div className="w-full space-y-3">
+        <div className="flex justify-between text-sm font-medium text-gray-500"><span>{t.analyzing}</span><span>{scanProgress}%</span></div>
+        <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-emerald-500 transition-all duration-300 ease-out" style={{ width: `${scanProgress}%` }} /></div>
+      </div>
+    )}
+  </div>
 );
 
 const ResultView = ({ result, selectedImage, t, resetApp, showSaveMenu, setShowSaveMenu, handleDownloadPdf, handleDownloadJpg, setShowSmsModal }) => (
-    <div className="px-6 pb-12 w-full max-w-md mx-auto animate-slide-up print:px-0 print:max-w-none print:pb-0">
-      <div id="report-container" className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden mb-6 print:shadow-none print:border-none print:rounded-none">
-        <div className={`p-6 flex items-center gap-4 print:border-b print:border-gray-200 ${result.status === 'healthy' ? 'bg-emerald-50' : result.status === 'critical' ? 'bg-rose-50' : 'bg-amber-50'}`}>
-          <div className="bg-white p-2 rounded-full shadow-sm print:hidden">{result.icon}</div>
-          <div className="w-full">
-            <div className="flex justify-between items-start">
-               <div>
-                  <h2 className="text-xl font-bold text-gray-900">{result.name}</h2>
-                  <div className="flex items-center gap-2 mt-1 print:hidden">
-                    <div className="h-1.5 w-16 bg-gray-200 rounded-full overflow-hidden"><div className={`h-full rounded-full ${result.status === 'healthy' ? 'bg-emerald-500' : result.status === 'critical' ? 'bg-rose-500' : 'bg-amber-500'}`} style={{ width: `${result.confidence}%` }} /></div>
-                    <span className="text-xs font-semibold text-gray-500">{result.confidence}% {t.match}</span>
-                  </div>
-               </div>
-               <img src={selectedImage} className="hidden print:block w-24 h-24 object-cover rounded-lg border border-gray-200" alt="Analyzed Leaf" />
+  <div className="px-6 pb-12 w-full max-w-md mx-auto animate-slide-up print:px-0 print:max-w-none print:pb-0">
+    <div id="report-container" className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden mb-6 print:shadow-none print:border-none print:rounded-none">
+      <div className={`p-6 flex items-center gap-4 print:border-b print:border-gray-200 ${result.status === 'healthy' ? 'bg-emerald-50' : result.status === 'critical' ? 'bg-rose-50' : 'bg-amber-50'}`}>
+        <div className="bg-white p-2 rounded-full shadow-sm print:hidden">{result.icon}</div>
+        <div className="w-full">
+          <div className="flex justify-between items-start">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">{result.name}</h2>
+              <div className="flex items-center gap-2 mt-1 print:hidden">
+                <div className="h-1.5 w-16 bg-gray-200 rounded-full overflow-hidden"><div className={`h-full rounded-full ${result.status === 'healthy' ? 'bg-emerald-500' : result.status === 'critical' ? 'bg-rose-500' : 'bg-amber-500'}`} style={{ width: `${result.confidence}%` }} /></div>
+                <span className="text-xs font-semibold text-gray-500">{result.confidence}% {t.match}</span>
+              </div>
             </div>
-            <div className="hidden print:block mt-2 text-xs text-gray-500">{t.generatedBy}</div>
+            <img src={selectedImage} className="hidden print:block w-24 h-24 object-cover rounded-lg border border-gray-200" alt="Analyzed Leaf" />
           </div>
-        </div>
-
-        <div className="p-6 space-y-6">
-          <p className="text-gray-600 leading-relaxed text-sm">{result.description}</p>
-          <div><h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2"><Activity className="w-3 h-3" /> {t.symptoms}</h3><ul className="space-y-2">{result.symptoms.map((symptom, i) => (<li key={i} className="flex items-start gap-2 text-sm text-gray-700"><span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 print:bg-black" />{symptom}</li>))}</ul></div>
-          <div><h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2"><ShieldCheck className="w-3 h-3" /> {t.treatment}</h3><div className="bg-gray-50 rounded-xl p-4 border border-gray-100 print:bg-white print:border-none print:p-0"><ul className="space-y-3">{result.treatment.map((step, i) => (<li key={i} className="flex gap-3 text-sm text-gray-700"><span className="flex items-center justify-center w-5 h-5 rounded-full bg-white border border-gray-200 text-xs font-bold text-emerald-600 shrink-0 shadow-sm print:shadow-none print:border-black print:text-black">{i + 1}</span>{step}</li>))}</ul></div></div>
-        </div>
-
-        <div className="p-4 bg-gray-50 border-t border-gray-100 flex gap-3 print:hidden no-export">
-          <button onClick={resetApp} className="flex-1 bg-white border border-gray-200 text-gray-700 font-semibold py-3 rounded-xl hover:bg-gray-50 transition-colors text-sm">{t.newScan}</button>
-          <div className="relative flex-1">
-             <button onClick={() => setShowSaveMenu(!showSaveMenu)} className="w-full h-full bg-emerald-600 text-white font-semibold py-3 rounded-xl hover:bg-emerald-700 transition-colors text-sm shadow-md shadow-emerald-200 flex items-center justify-center gap-2"><Download className="w-4 h-4" />{t.saveReport}</button>
-              {showSaveMenu && (
-                <div className="absolute bottom-full right-0 mb-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 p-2 animate-fade-in z-20">
-                    <button onClick={handleDownloadPdf} className="w-full flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium text-left"><FileText className="w-4 h-4 text-rose-500" />{t.savePdf}</button>
-                    <button onClick={handleDownloadJpg} className="w-full flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium text-left"><ImageIcon className="w-4 h-4 text-blue-500" />{t.saveJpg}</button>
-                    <button 
-                      onClick={() => { setShowSaveMenu(false); setShowSmsModal(true); }}
-                      className="w-full flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium text-left border-t border-gray-100"
-                    >
-                      <MessageSquare className="w-4 h-4 text-emerald-500" />{t.sendSms}
-                    </button>
-                </div>
-              )}
-              {showSaveMenu && <div className="fixed inset-0 z-10" onClick={() => setShowSaveMenu(false)}></div>}
-          </div>
+          <div className="hidden print:block mt-2 text-xs text-gray-500">{t.generatedBy}</div>
         </div>
       </div>
-      <div className="text-center text-xs text-gray-400 px-8 print:hidden">{t.disclaimer}</div>
+
+      <div className="p-6 space-y-6">
+        <p className="text-gray-600 leading-relaxed text-sm">{result.description}</p>
+        <div><h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2"><Activity className="w-3 h-3" /> {t.symptoms}</h3><ul className="space-y-2">{result.symptoms.map((symptom, i) => (<li key={i} className="flex items-start gap-2 text-sm text-gray-700"><span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 print:bg-black" />{symptom}</li>))}</ul></div>
+        <div><h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2"><ShieldCheck className="w-3 h-3" /> {t.treatment}</h3><div className="bg-gray-50 rounded-xl p-4 border border-gray-100 print:bg-white print:border-none print:p-0"><ul className="space-y-3">{result.treatment.map((step, i) => (<li key={i} className="flex gap-3 text-sm text-gray-700"><span className="flex items-center justify-center w-5 h-5 rounded-full bg-white border border-gray-200 text-xs font-bold text-emerald-600 shrink-0 shadow-sm print:shadow-none print:border-black print:text-black">{i + 1}</span>{step}</li>))}</ul></div></div>
+      </div>
+
+      <div className="p-4 bg-gray-50 border-t border-gray-100 flex gap-3 print:hidden no-export">
+        <button onClick={resetApp} className="flex-1 bg-white border border-gray-200 text-gray-700 font-semibold py-3 rounded-xl hover:bg-gray-50 transition-colors text-sm">{t.newScan}</button>
+        <div className="relative flex-1">
+          <button onClick={() => setShowSaveMenu(!showSaveMenu)} className="w-full h-full bg-emerald-600 text-white font-semibold py-3 rounded-xl hover:bg-emerald-700 transition-colors text-sm shadow-md shadow-emerald-200 flex items-center justify-center gap-2"><Download className="w-4 h-4" />{t.saveReport}</button>
+          {showSaveMenu && (
+            <div className="absolute bottom-full right-0 mb-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 p-2 animate-fade-in z-20">
+              <button onClick={handleDownloadPdf} className="w-full flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium text-left"><FileText className="w-4 h-4 text-rose-500" />{t.savePdf}</button>
+              <button onClick={handleDownloadJpg} className="w-full flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium text-left"><ImageIcon className="w-4 h-4 text-blue-500" />{t.saveJpg}</button>
+              <button
+                onClick={() => { setShowSaveMenu(false); setShowSmsModal(true); }}
+                className="w-full flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium text-left border-t border-gray-100"
+              >
+                <MessageSquare className="w-4 h-4 text-emerald-500" />{t.sendSms}
+              </button>
+            </div>
+          )}
+          {showSaveMenu && <div className="fixed inset-0 z-10" onClick={() => setShowSaveMenu(false)}></div>}
+        </div>
+      </div>
     </div>
+    <div className="text-center text-xs text-gray-400 px-8 print:hidden">{t.disclaimer}</div>
+  </div>
 );
 
 const SmsShareModal = ({ language, result, onClose }) => {
@@ -1140,21 +1176,38 @@ const SmsShareModal = ({ language, result, onClose }) => {
   const [selectedSpecialist, setSelectedSpecialist] = useState(null);
   const [viewMode, setViewMode] = useState('list'); // 'list' | 'manual'
   const [manualData, setManualData] = useState({ name: '', phone: '' });
+  const [specialists, setSpecialists] = useState([]);
 
-  const handleSendSms = () => {
+  useEffect(() => {
+    const fetchSpecialists = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/api/agriculture/specialists?language=${language}`);
+        const data = await response.json();
+        if (data.success) {
+          setSpecialists(data.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch specialists:', error);
+        // Fallback to empty or static if needed
+      }
+    };
+    fetchSpecialists();
+  }, [language]);
+
+  const handleSendSms = async () => {
     let spec = selectedSpecialist;
     if (viewMode === 'manual') {
-        if (!manualData.name || !manualData.phone) return;
-        spec = { 
-            id: 'manual', 
-            name: manualData.name, 
-            role: 'Custom Contact', 
-            phone: manualData.phone 
-        };
+      if (!manualData.name || !manualData.phone) return;
+      spec = {
+        id: 'manual',
+        name: manualData.name,
+        role: 'Custom Contact',
+        phone: manualData.phone
+      };
     }
 
     if (!spec || !result) return;
-    
+
     // Construct the message body
     const messageBody = `Krishi Sahayak Report:
 Disease: ${result.name}
@@ -1162,15 +1215,37 @@ Confidence: ${result.confidence}%
 Crop Status: ${result.status}
 Please advise on treatment.`;
 
-    const encodedBody = encodeURIComponent(messageBody);
-    // Use sms: protocol to open default SMS app
-    window.open(`sms:${spec.phone}?body=${encodedBody}`, '_blank');
+    try {
+      const response = await fetch('http://localhost:5000/api/sms/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phone: spec.phone,
+          message: messageBody,
+          language: language
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(language === 'hi' ? 'संदेश भेजा गया!' : language === 'ta' ? 'செய்தி அனுப்பப்பட்டது!' : 'Message Sent!');
+      } else {
+        alert('Failed to send message: ' + data.message);
+      }
+    } catch (error) {
+      console.error('Error sending SMS:', error);
+      alert('Error connecting to SMS server');
+    }
+
     onClose();
   };
 
   const handleSaveContact = (e, spec) => {
-    e.stopPropagation(); 
-    
+    e.stopPropagation();
+
     // Create vCard content
     const vCardData = `BEGIN:VCARD
 VERSION:3.0
@@ -1202,123 +1277,435 @@ END:VCARD`;
             <X className="w-5 h-5" />
           </button>
         </div>
-        
+
         <div className="p-6">
           {viewMode === 'list' ? (
             <>
-                <h4 className="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wide text-center">
-                    {t.selectSpec}
-                </h4>
-                
-                <div className="space-y-3 mb-6 max-h-60 overflow-y-auto pr-1">
-                    {NEARBY_SPECIALISTS.map(spec => (
-                    <div 
-                        key={spec.id}
-                        onClick={() => setSelectedSpecialist(spec)}
-                        className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
-                        selectedSpecialist?.id === spec.id 
-                            ? 'border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500' 
-                            : 'border-gray-200 hover:border-emerald-300 hover:bg-gray-50'
-                        }`}
-                    >
-                        <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-full ${selectedSpecialist?.id === spec.id ? 'bg-emerald-200 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
-                            <User className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <div className="font-bold text-gray-800 text-sm">{spec.name}</div>
-                            <div className="text-xs text-gray-500">{spec.role}</div>
-                        </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">
-                            <MapPin className="w-3 h-3" /> {spec.distance}
-                        </div>
-                        <button 
-                            onClick={(e) => handleSaveContact(e, spec)}
-                            className="p-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 hover:scale-110 active:scale-95 rounded-full transition-all shadow-sm border border-emerald-200"
-                            title={t.saveContact}
-                        >
-                            <UserPlus className="w-4 h-4" />
-                        </button>
-                        </div>
-                    </div>
-                    ))}
-                </div>
+              <h4 className="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wide text-center">
+                {t.selectSpec}
+              </h4>
 
-                <div className="flex gap-2">
-                    <button 
-                        onClick={() => setViewMode('manual')}
-                        className="flex-1 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm"
-                    >
-                        <Plus className="w-4 h-4" /> {t.addManual}
-                    </button>
-                    <button 
-                        onClick={handleSendSms}
-                        disabled={!selectedSpecialist}
-                        className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
-                    >
-                        <Send className="w-4 h-4" /> {t.send}
-                    </button>
-                </div>
+              <div className="space-y-3 mb-6 max-h-60 overflow-y-auto pr-1">
+                {specialists.map(spec => (
+                  <div
+                    key={spec.id}
+                    onClick={() => setSelectedSpecialist(spec)}
+                    className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${selectedSpecialist?.id === spec.id
+                      ? 'border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500'
+                      : 'border-gray-200 hover:border-emerald-300 hover:bg-gray-50'
+                      }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-full ${selectedSpecialist?.id === spec.id ? 'bg-emerald-200 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                        <User className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-gray-800 text-sm">{spec.name}</div>
+                        <div className="text-xs text-gray-500">{spec.role}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">
+                        <MapPin className="w-3 h-3" /> {spec.distance}
+                      </div>
+                      <button
+                        onClick={(e) => handleSaveContact(e, spec)}
+                        className="p-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 hover:scale-110 active:scale-95 rounded-full transition-all shadow-sm border border-emerald-200"
+                        title={t.saveContact}
+                      >
+                        <UserPlus className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setViewMode('manual')}
+                  className="flex-1 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm"
+                >
+                  <Plus className="w-4 h-4" /> {t.addManual}
+                </button>
+                <button
+                  onClick={handleSendSms}
+                  disabled={!selectedSpecialist}
+                  className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+                >
+                  <Send className="w-4 h-4" /> {t.send}
+                </button>
+              </div>
             </>
           ) : (
             <div className="animate-fade-in">
-                <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-bold text-gray-800 text-sm uppercase tracking-wide">
-                        {t.manualEntry}
-                    </h4>
-                    <button onClick={() => setViewMode('list')} className="text-xs text-emerald-600 font-semibold hover:underline">
-                        {t.backToList}
-                    </button>
-                </div>
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-bold text-gray-800 text-sm uppercase tracking-wide">
+                  {t.manualEntry}
+                </h4>
+                <button onClick={() => setViewMode('list')} className="text-xs text-emerald-600 font-semibold hover:underline">
+                  {t.backToList}
+                </button>
+              </div>
 
-                <div className="space-y-4 mb-6">
-                    <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">{t.enterName}</label>
-                        <input 
-                            type="text" 
-                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                            placeholder="e.g. Dr. Amit Sharma"
-                            value={manualData.name}
-                            onChange={(e) => setManualData({...manualData, name: e.target.value})}
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium text-gray-500 mb-1">{t.enterPhone}</label>
-                        <input 
-                            type="tel" 
-                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                            placeholder="e.g. 9876543210"
-                            value={manualData.phone}
-                            onChange={(e) => setManualData({...manualData, phone: e.target.value})}
-                        />
-                    </div>
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">{t.enterName}</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="e.g. Dr. Amit Sharma"
+                    value={manualData.name}
+                    onChange={(e) => setManualData({ ...manualData, name: e.target.value })}
+                  />
                 </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">{t.enterPhone}</label>
+                  <input
+                    type="tel"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    placeholder="e.g. 9876543210"
+                    value={manualData.phone}
+                    onChange={(e) => setManualData({ ...manualData, phone: e.target.value })}
+                  />
+                </div>
+              </div>
 
-                <div className="flex gap-2">
-                    <button 
-                        onClick={() => {
-                            if(manualData.name && manualData.phone) {
-                                handleSaveContact({ stopPropagation: ()=>{} }, { name: manualData.name, phone: manualData.phone, role: 'Custom Contact' });
-                            }
-                        }}
-                        disabled={!manualData.name || !manualData.phone}
-                        className="flex-1 py-3 bg-blue-50 text-blue-700 rounded-xl font-bold hover:bg-blue-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
-                    >
-                        <UserPlus className="w-4 h-4" /> {t.saveContact}
-                    </button>
-                    <button 
-                        onClick={handleSendSms}
-                        disabled={!manualData.name || !manualData.phone}
-                        className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
-                    >
-                        <Send className="w-4 h-4" /> {t.send}
-                    </button>
-                </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    if (manualData.name && manualData.phone) {
+                      handleSaveContact({ stopPropagation: () => { } }, { name: manualData.name, phone: manualData.phone, role: 'Custom Contact' });
+                    }
+                  }}
+                  disabled={!manualData.name || !manualData.phone}
+                  className="flex-1 py-3 bg-blue-50 text-blue-700 rounded-xl font-bold hover:bg-blue-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
+                >
+                  <UserPlus className="w-4 h-4" /> {t.saveContact}
+                </button>
+                <button
+                  onClick={handleSendSms}
+                  disabled={!manualData.name || !manualData.phone}
+                  className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
+                >
+                  <Send className="w-4 h-4" /> {t.send}
+                </button>
+              </div>
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+};
+
+// --- Soil Analysis View Component ---
+const SoilAnalysisView = ({ onBack, language }) => {
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [result, setResult] = useState(null);
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    accept: { 'image/*': ['.jpeg', '.jpg', '.png'] },
+    multiple: false,
+    onDrop: (acceptedFiles) => {
+      if (acceptedFiles.length > 0) {
+        const file = acceptedFiles[0];
+        setSelectedImage(Object.assign(file, {
+          preview: URL.createObjectURL(file)
+        }));
+        setResult(null);
+      }
+    }
+  });
+
+  const analyzeSoil = async () => {
+    if (!selectedImage) return;
+
+    setIsAnalyzing(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', selectedImage);
+      formData.append('language', language);
+
+      const response = await fetch('http://localhost:5000/api/soil/analyze', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setResult(data.data);
+      } else {
+        alert(data.message || 'Analysis failed');
+      }
+    } catch (error) {
+      console.error('Soil analysis error:', error);
+      alert('Error connecting to analysis server');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const resetAnalysis = () => {
+    setSelectedImage(null);
+    setResult(null);
+  };
+
+  const downloadPDF = () => {
+    if (!result) return;
+
+    // Create a simple HTML-based PDF content
+    const pdfContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Soil Analysis Report</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+          h1 { color: #059669; border-bottom: 3px solid #059669; padding-bottom: 10px; }
+          h2 { color: #047857; margin-top: 30px; }
+          .header { text-align: center; margin-bottom: 30px; }
+          .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0; }
+          .info-box { border: 2px solid #d1d5db; padding: 15px; border-radius: 8px; }
+          .info-label { font-size: 12px; color: #6b7280; margin-bottom: 5px; }
+          .info-value { font-size: 18px; font-weight: bold; color: #111827; }
+          .recommendations { background: #f0fdf4; padding: 20px; border-radius: 8px; border-left: 4px solid #059669; }
+          .recommendations li { margin: 10px 0; line-height: 1.6; }
+          .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #d1d5db; text-align: center; color: #6b7280; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>🧪 Soil Health Analysis Report</h1>
+          <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+        </div>
+
+        <h2>Analysis Results</h2>
+        <div class="info-grid">
+          <div class="info-box">
+            <div class="info-label">${text.soilType}</div>
+            <div class="info-value">${result.soilType}</div>
+          </div>
+          <div class="info-box">
+            <div class="info-label">${text.phLevel}</div>
+            <div class="info-value">${result.phLevel}</div>
+          </div>
+          <div class="info-box">
+            <div class="info-label">${text.nitrogen}</div>
+            <div class="info-value">${result.nitrogen}</div>
+          </div>
+          <div class="info-box">
+            <div class="info-label">${text.phosphorus}</div>
+            <div class="info-value">${result.phosphorus}</div>
+          </div>
+          <div class="info-box" style="grid-column: span 2;">
+            <div class="info-label">${text.potassium}</div>
+            <div class="info-value">${result.potassium}</div>
+          </div>
+        </div>
+
+        <h2>${text.recommendations}</h2>
+        <div class="recommendations">
+          <ul>
+            ${result.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+          </ul>
+        </div>
+
+        <div class="footer">
+          <p>Generated by Krishi Sahayak - AI-Powered Crop Health Diagnostic System</p>
+          <p>This report is for informational purposes only. Consult with agricultural experts for specific advice.</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Create a blob and download
+    const blob = new Blob([pdfContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `soil-analysis-report-${new Date().getTime()}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const t = {
+    en: {
+      title: 'Soil Health Analysis',
+      upload: 'Upload Soil Sample Image',
+      dragDrop: 'Drag & drop soil image here, or click to select',
+      analyze: 'Analyze Soil',
+      analyzing: 'Analyzing...',
+      results: 'Analysis Results',
+      soilType: 'Soil Type',
+      phLevel: 'pH Level',
+      nitrogen: 'Nitrogen',
+      phosphorus: 'Phosphorus',
+      potassium: 'Potassium',
+      recommendations: 'Recommendations',
+      newAnalysis: 'New Analysis'
+    },
+    hi: {
+      title: 'मृदा स्वास्थ्य विश्लेषण',
+      upload: 'मिट्टी का नमूना अपलोड करें',
+      dragDrop: 'मिट्टी की छवि यहां खींचें और छोड़ें, या चुनने के लिए क्लिक करें',
+      analyze: 'मिट्टी का विश्लेषण करें',
+      analyzing: 'विश्लेषण हो रहा है...',
+      results: 'विश्लेषण परिणाम',
+      soilType: 'मिट्टी का प्रकार',
+      phLevel: 'पीएच स्तर',
+      nitrogen: 'नाइट्रोजन',
+      phosphorus: 'फास्फोरस',
+      potassium: 'पोटैशियम',
+      recommendations: 'सिफारिशें',
+      newAnalysis: 'नया विश्लेषण'
+    },
+    ta: {
+      title: 'மண் சுகாதார பகுப்பாய்வு',
+      upload: 'மண் மாதிரி படத்தை பதிவேற்றவும்',
+      dragDrop: 'மண் படத்தை இங்கே இழுத்து விடவும், அல்லது தேர்ந்தெடுக்க கிளிக் செய்யவும்',
+      analyze: 'மண்ணை பகுப்பாய்வு செய்யவும்',
+      analyzing: 'பகுப்பாய்வு செய்கிறது...',
+      results: 'பகுப்பாய்வு முடிவுகள்',
+      soilType: 'மண் வகை',
+      phLevel: 'pH அளவு',
+      nitrogen: 'நைட்ரஜன்',
+      phosphorus: 'பாஸ்பரஸ்',
+      potassium: 'பொட்டாசியம்',
+      recommendations: 'பரிந்துரைகள்',
+      newAnalysis: 'புதிய பகுப்பாய்வு'
+    }
+  };
+
+  const text = t[language] || t.en;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-green-50 pb-20">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-amber-600 to-green-600 text-white p-6 shadow-lg">
+        <button onClick={onBack} className="mb-4 flex items-center gap-2 hover:bg-white/20 px-3 py-2 rounded-lg transition-colors">
+          <ArrowLeft size={20} />
+          Back
+        </button>
+        <h1 className="text-2xl font-bold flex items-center gap-3">
+          <Beaker size={28} />
+          {text.title}
+        </h1>
+      </div>
+
+      <div className="p-6 max-w-2xl mx-auto">
+        {!result ? (
+          <>
+            {/* Upload Section */}
+            <div
+              {...getRootProps()}
+              className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${isDragActive
+                ? 'border-green-500 bg-green-50'
+                : 'border-gray-300 hover:border-green-400 hover:bg-gray-50'
+                }`}
+            >
+              <input {...getInputProps()} />
+              <Upload size={48} className="mx-auto mb-4 text-gray-400" />
+              <p className="text-lg font-medium text-gray-700 mb-2">{text.upload}</p>
+              <p className="text-sm text-gray-500">{text.dragDrop}</p>
+            </div>
+
+            {/* Preview */}
+            {selectedImage && (
+              <div className="mt-6">
+                <img
+                  src={selectedImage.preview}
+                  alt="Soil sample"
+                  className="w-full h-64 object-cover rounded-xl shadow-lg"
+                />
+                <button
+                  onClick={analyzeSoil}
+                  disabled={isAnalyzing}
+                  className="w-full mt-4 py-4 bg-gradient-to-r from-amber-600 to-green-600 text-white rounded-xl font-bold hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <Loader2 className="animate-spin" size={20} />
+                      {text.analyzing}
+                    </>
+                  ) : (
+                    <>
+                      <Beaker size={20} />
+                      {text.analyze}
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          /* Results Section */
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <CheckCircle className="text-green-600" size={24} />
+                {text.results}
+              </h2>
+
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-amber-50 p-4 rounded-xl">
+                  <p className="text-sm text-gray-600 mb-1">{text.soilType}</p>
+                  <p className="text-lg font-bold text-gray-900">{result.soilType}</p>
+                </div>
+                <div className="bg-blue-50 p-4 rounded-xl">
+                  <p className="text-sm text-gray-600 mb-1">{text.phLevel}</p>
+                  <p className="text-lg font-bold text-gray-900">{result.phLevel}</p>
+                </div>
+                <div className="bg-green-50 p-4 rounded-xl">
+                  <p className="text-sm text-gray-600 mb-1">{text.nitrogen}</p>
+                  <p className="text-lg font-bold text-gray-900">{result.nitrogen}</p>
+                </div>
+                <div className="bg-purple-50 p-4 rounded-xl">
+                  <p className="text-sm text-gray-600 mb-1">{text.phosphorus}</p>
+                  <p className="text-lg font-bold text-gray-900">{result.phosphorus}</p>
+                </div>
+                <div className="bg-orange-50 p-4 rounded-xl col-span-2">
+                  <p className="text-sm text-gray-600 mb-1">{text.potassium}</p>
+                  <p className="text-lg font-bold text-gray-900">{result.potassium}</p>
+                </div>
+              </div>
+
+              <div className="bg-green-50 p-4 rounded-xl">
+                <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <Leaf size={20} className="text-green-600" />
+                  {text.recommendations}
+                </h3>
+                <ul className="space-y-2">
+                  {result.recommendations.map((rec, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-gray-700">
+                      <ChevronRight size={18} className="text-green-600 flex-shrink-0 mt-0.5" />
+                      <span>{rec}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={downloadPDF}
+                className="py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+              >
+                <Download size={20} />
+                Download Report
+              </button>
+              <button
+                onClick={resetAnalysis}
+                className="py-4 bg-gray-600 text-white rounded-xl font-bold hover:bg-gray-700 transition-colors flex items-center justify-center gap-2"
+              >
+                <RefreshCw size={20} />
+                {text.newAnalysis}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1330,13 +1717,15 @@ const AuthPage = ({ onLogin }) => {
     fullName: '',
     phone: '',
     state: '',
-    language: 'Hindi'
+    language: 'Hindi',
+    password: ''
   });
 
   const [submitted, setSubmitted] = useState(false);
+  const [isLogin, setIsLogin] = useState(false);
 
   // Using a sample Unsplash image for the background
-  const bgImage = "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?q=80&w=2070&auto=format&fit=crop"; 
+  const bgImage = "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?q=80&w=2070&auto=format&fit=crop";
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -1346,25 +1735,72 @@ const AuthPage = ({ onLogin }) => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
-    // Simulate generic "offline" save
-    setTimeout(() => {
-      // alert("Registration Saved Locally! Ready for diagnosis."); // Optional: Use toast instead
-      setSubmitted(false);
-      onLogin(); // Call the parent function to switch state
-    }, 1500);
+    setSubmitted(true); // Set submitted to true at the start of the async operation
+
+    if (isLogin) {
+      try {
+        const response = await fetch('http://localhost:5000/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: formData.phone, password: formData.password })
+        });
+        const data = await response.json();
+        if (data.success) {
+          localStorage.setItem('token', data.data.token);
+          localStorage.setItem('user', JSON.stringify(data.data.user));
+          onLogin(data.data.user);
+        } else {
+          alert(data.message);
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        alert('Login failed. Please try again.');
+        // Fallback for demo if backend is not running
+        onLogin({ name: 'Demo User', phone: formData.phone, language: formData.language });
+      } finally {
+        setSubmitted(false);
+      }
+    } else { // Registration
+      try {
+        const response = await fetch('http://localhost:5000/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: formData.fullName, // Use fullName for registration
+            phone: formData.phone,
+            password: formData.password,
+            language: formData.language
+          })
+        });
+        const data = await response.json();
+        if (data.success) {
+          localStorage.setItem('token', data.data.token);
+          localStorage.setItem('user', JSON.stringify(data.data.user));
+          onLogin(data.data.user);
+        } else {
+          alert(data.message);
+        }
+      } catch (error) {
+        console.error('Registration error:', error);
+        alert('Registration failed. Please try again.');
+        // Fallback for demo
+        onLogin({ name: formData.fullName, phone: formData.phone, language: formData.language });
+      } finally {
+        setSubmitted(false);
+      }
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center relative overflow-hidden font-sans">
-      
+
       {/* Background Image Area */}
       <div className="absolute inset-0 z-0">
-        <img 
-          src={bgImage} 
-          alt="Farmer in field" 
+        <img
+          src={bgImage}
+          alt="Farmer in field"
           className="w-full h-full object-cover"
         />
         {/* Gradient Overlay */}
@@ -1373,7 +1809,7 @@ const AuthPage = ({ onLogin }) => {
 
       {/* Main Content Container */}
       <div className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between h-full py-8 md:py-0">
-        
+
         {/* Left Side: Value Prop (Visible on Desktop) */}
         <div className="hidden md:block w-full md:w-1/2 text-white pr-12">
           <div className="flex items-center space-x-2 mb-6">
@@ -1382,14 +1818,14 @@ const AuthPage = ({ onLogin }) => {
             </div>
             <span className="text-sm font-semibold tracking-wider uppercase text-emerald-200">Offline First Technology</span>
           </div>
-          
+
           <h1 className="text-5xl font-bold leading-tight mb-6">
-            Instant Crop Diagnosis, <br/>
+            Instant Crop Diagnosis, <br />
             <span className="text-emerald-300">No Internet Needed.</span>
           </h1>
-          
+
           <p className="text-xl text-gray-200 mb-8 max-w-lg leading-relaxed">
-            Take a photo of any leaf and get expert advice in your local language. 
+            Take a photo of any leaf and get expert advice in your local language.
             Our AI runs directly on your phone to save your yield.
           </p>
 
@@ -1408,7 +1844,7 @@ const AuthPage = ({ onLogin }) => {
         {/* Right Side: Sign Up Card */}
         <div className="w-full md:w-1/2 max-w-md ml-auto">
           <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
-            
+
             {/* Mobile Header (Visible only on mobile) */}
             <div className="md:hidden bg-emerald-700 p-6 text-white text-center">
               <Leaf size={40} className="mx-auto mb-2 text-emerald-300" />
@@ -1417,18 +1853,50 @@ const AuthPage = ({ onLogin }) => {
             </div>
 
             <div className="p-8">
-              <div className="mb-8 text-center md:text-left">
-                <h3 className="text-2xl font-bold text-gray-900 hidden md:block">Get Started</h3>
-                <p className="text-gray-500 mt-2">Create your farmer profile to access offline tools.</p>
+              {/* Tab Interface */}
+              <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
+                <button
+                  type="button"
+                  onClick={() => setIsLogin(false)}
+                  className={`flex-1 py-2.5 px-4 rounded-md font-medium transition-all ${!isLogin
+                    ? 'bg-white text-emerald-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                >
+                  <UserPlus size={18} className="inline mr-2" />
+                  Sign Up
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsLogin(true)}
+                  className={`flex-1 py-2.5 px-4 rounded-md font-medium transition-all ${isLogin
+                    ? 'bg-white text-emerald-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                >
+                  <User size={18} className="inline mr-2" />
+                  Sign In
+                </button>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
-                
+              <div className="mb-8 text-center md:text-left">
+                <h3 className="text-2xl font-bold text-gray-900 hidden md:block">
+                  {isLogin ? 'Welcome Back' : 'Get Started'}
+                </h3>
+                <p className="text-gray-500 mt-2">
+                  {isLogin
+                    ? 'Sign in to access your farmer dashboard.'
+                    : 'Create your farmer profile to access offline tools.'}
+                </p>
+              </div>
+
+              <form onSubmit={handleLogin} className="space-y-5">
+
                 {/* Language Selector */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Language</label>
                   <div className="relative">
-                    <select 
+                    <select
                       name="language"
                       value={formData.language}
                       onChange={handleInputChange}
@@ -1445,24 +1913,26 @@ const AuthPage = ({ onLogin }) => {
                   </div>
                 </div>
 
-                {/* Name Field */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <User size={18} className="text-gray-400" />
+                {/* Name Field - Only for Sign Up */}
+                {!isLogin && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <User size={18} className="text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        name="fullName"
+                        required
+                        placeholder="e.g. Rajesh Kumar"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                        value={formData.fullName}
+                        onChange={handleInputChange}
+                      />
                     </div>
-                    <input
-                      type="text"
-                      name="fullName"
-                      required
-                      placeholder="e.g. Rajesh Kumar"
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
-                      value={formData.fullName}
-                      onChange={handleInputChange}
-                    />
                   </div>
-                </div>
+                )}
 
                 {/* Phone Number */}
                 <div>
@@ -1484,23 +1954,45 @@ const AuthPage = ({ onLogin }) => {
                   </div>
                 </div>
 
-                {/* Location (Full Width) */}
+                {/* Password Field */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">State/Region</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <MapPin size={18} className="text-gray-400" />
+                      <ShieldCheck size={18} className="text-gray-400" />
                     </div>
                     <input
-                      type="text"
-                      name="state"
-                      placeholder="State"
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                      value={formData.state}
+                      type="password"
+                      name="password"
+                      required
+                      placeholder="Enter password"
+                      minLength="6"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                      value={formData.password}
                       onChange={handleInputChange}
                     />
                   </div>
                 </div>
+
+                {/* Location (Full Width) - Only for Sign Up */}
+                {!isLogin && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">State/Region</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <MapPin size={18} className="text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        name="state"
+                        placeholder="State"
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                        value={formData.state}
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <button
                   type="submit"
@@ -1510,10 +2002,13 @@ const AuthPage = ({ onLogin }) => {
                   {submitted ? (
                     <>
                       <CheckCircle className="animate-spin mr-2" size={20} />
-                      Setting up Offline Mode...
+                      {isLogin ? 'Signing In...' : 'Setting up Offline Mode...'}
                     </>
                   ) : (
-                    "Sign In"
+                    <>
+                      <CheckCircle className="mr-2" size={20} />
+                      {isLogin ? 'Sign In' : 'Create Account'}
+                    </>
                   )}
                 </button>
 
@@ -1536,11 +2031,57 @@ const AuthenticatedApp = () => {
   const [result, setResult] = useState(null);
   const [scanProgress, setScanProgress] = useState(0);
   const [showSaveMenu, setShowSaveMenu] = useState(false);
-  const [language, setLanguage] = useState('en'); 
+  const [language, setLanguage] = useState('en');
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [showLocationMenu, setShowLocationMenu] = useState(false);
   const [manualLocationQuery, setManualLocationQuery] = useState('');
-  
+
+  // --- Roboflow Offline State ---
+  const [modelLoaded, setModelLoaded] = useState(false);
+  const [loadingModel, setLoadingModel] = useState(true);
+
+  useEffect(() => {
+    const loadRoboflowModel = async () => {
+      try {
+        if (window.roboflow) {
+          await window.roboflow.auth({
+            publishable_key: ROBOFLOW_API_KEY
+          }).load({
+            model: ROBOFLOW_MODEL,
+            version: ROBOFLOW_VERSION
+          }).then(model => {
+            window.roboflowModel = model;
+            setModelLoaded(true);
+            console.log("Roboflow model loaded for offline use");
+          });
+        }
+      } catch (e) {
+        console.error("Error loading Roboflow model:", e);
+      } finally {
+        setLoadingModel(false);
+      }
+    };
+    loadRoboflowModel();
+  }, []);
+
+  // Helper to map Roboflow classes to internal IDs
+  const mapDiseaseClass = (roboflowClass) => {
+    const classMap = {
+      'healthy': 'healthy',
+      'early_blight': 'early_blight',
+      'early blight': 'early_blight',
+      'late_blight': 'late_blight',
+      'late blight': 'late_blight',
+      'powdery_mildew': 'powdery_mildew',
+      'powdery mildew': 'powdery_mildew',
+      'bacterial_spot': 'bacterial_spot',
+      'bacterial spot': 'bacterial_spot',
+      'leaf_curl': 'leaf_curl',
+      'leaf curl': 'leaf_curl'
+    };
+    return classMap[roboflowClass.toLowerCase().trim()] || 'healthy';
+  };
+
   // New State for SMS Modal
   const [showSmsModal, setShowSmsModal] = useState(false);
   const [notification, setNotification] = useState(null);
@@ -1597,41 +2138,57 @@ const AuthenticatedApp = () => {
     }
   };
 
-  const fetchWeatherForLocation = (location) => {
-      setLoadingWeather(true);
-      const month = new Date().getMonth(); 
-      let season = 'summer';
-      let temp = 32;
-      let condition = 'Sunny';
-      
-      if (month >= 5 && month <= 8) { 
-        season = 'monsoon';
-        temp = 28;
-        condition = 'Cloudy';
-      } else if (month >= 10 || month <= 1) { 
-        season = 'winter';
-        temp = 18;
-        condition = 'Clear';
-      }
+  const fetchWeatherForLocation = async (location) => {
+    setLoadingWeather(true);
+    try {
+      const response = await fetch(`http://localhost:5000/api/weather/current?lat=${location.lat}&lon=${location.lng}&lang=${language}`);
+      const data = await response.json();
 
-      setTimeout(() => {
+      if (data.success) {
         setWeather({
-          location: location.name,
-          temp: temp, 
-          condition: condition,
-          humidity: 65,
-          wind: 12,
-          season: season,
-          crops: SEASONAL_CROPS[season]
+          location: data.data.location,
+          temp: data.data.temperature,
+          condition: data.data.description,
+          humidity: data.data.humidity,
+          wind: data.data.windSpeed,
+          season: getSeason(new Date().getMonth()),
+          crops: SEASONAL_CROPS[getSeason(new Date().getMonth())]
         });
-        setLoadingWeather(false);
-      }, 1000);
+      } else {
+        // Fallback to mock if API fails
+        setWeather(generateMockWeather(location));
+      }
+    } catch (e) {
+      console.error("Weather fetch failed", e);
+      setWeather(generateMockWeather(location));
+    } finally {
+      setLoadingWeather(false);
+    }
+  };
+
+  const getSeason = (month) => {
+    if (month >= 5 && month <= 8) return 'monsoon';
+    if (month >= 10 || month <= 1) return 'winter';
+    return 'summer';
+  };
+
+  const generateMockWeather = (location) => {
+    const season = getSeason(new Date().getMonth());
+    return {
+      location: location.name,
+      temp: season === 'winter' ? 18 : 32,
+      condition: season === 'monsoon' ? 'Cloudy' : 'Sunny',
+      humidity: 65,
+      wind: 12,
+      season: season,
+      crops: SEASONAL_CROPS[season]
+    };
   };
 
   const detectLocation = async () => {
     setLoadingWeather(true);
-    setShowLocationMenu(false); 
-    
+    setShowLocationMenu(false);
+
     if (!navigator.geolocation) {
       showNotification("Geolocation is not supported by your browser.", "error");
       setLoadingWeather(false);
@@ -1644,16 +2201,16 @@ const AuthenticatedApp = () => {
 
       let locationName = "Your Area";
       try {
-          locationName = await getLocationName(latitude, longitude);
-      } catch(e) {
-          console.warn("Reverse geocoding failed", e);
+        locationName = await getLocationName(latitude, longitude);
+      } catch (e) {
+        console.warn("Reverse geocoding failed", e);
       }
-      
-      const newLocation = { 
-          name: locationName, 
-          lat: latitude, 
-          lng: longitude, 
-          source: 'Device' 
+
+      const newLocation = {
+        name: locationName,
+        lat: latitude,
+        lng: longitude,
+        source: 'Device'
       };
 
       updateGlobalLocation(newLocation);
@@ -1665,9 +2222,9 @@ const AuthenticatedApp = () => {
       if (error && error.code === 1) errorMessage = "Location permission denied.";
       else if (error && error.code === 2) errorMessage = "Location unavailable.";
       else if (error && error.code === 3) errorMessage = "Location request timed out.";
-      
+
       showNotification(`${errorMessage} Using default location.`, "error");
-      
+
       const defaultLoc = { name: "New Delhi (Default)", lat: 28.61, lng: 77.20, source: 'Default' };
       updateGlobalLocation(defaultLoc);
       fetchWeatherForLocation(defaultLoc);
@@ -1679,22 +2236,22 @@ const AuthenticatedApp = () => {
   const handleManualSearch = async (query) => {
     if (!query.trim()) return;
     setLoadingWeather(true);
-    setShowLocationMenu(false); 
+    setShowLocationMenu(false);
     try {
       const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
       const data = await response.json();
-      
+
       if (data && data.length > 0) {
         const result = data[0];
         const newLocation = {
-          name: result.display_name.split(',')[0], 
+          name: result.display_name.split(',')[0],
           lat: parseFloat(result.lat),
           lng: parseFloat(result.lon),
           source: 'Manual'
         };
         updateGlobalLocation(newLocation);
         fetchWeatherForLocation(newLocation);
-        setManualLocationQuery(''); 
+        setManualLocationQuery('');
       } else {
         showNotification("Location not found. Please try again.", "error");
         setLoadingWeather(false);
@@ -1708,9 +2265,9 @@ const AuthenticatedApp = () => {
 
   useEffect(() => {
     if (globalLocation) {
-        fetchWeatherForLocation(globalLocation);
+      fetchWeatherForLocation(globalLocation);
     }
-  }, []); 
+  }, []);
 
   useEffect(() => {
     const loadScript = (src) => {
@@ -1736,9 +2293,12 @@ const AuthenticatedApp = () => {
     }).catch(err => console.error("Failed to load export tools", err));
   }, []);
 
+  const [selectedFile, setSelectedFile] = useState(null);
+
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setSelectedFile(file);
       const reader = new FileReader();
       reader.onload = (event) => {
         setSelectedImage(event.target.result);
@@ -1748,28 +2308,125 @@ const AuthenticatedApp = () => {
     }
   };
 
-  const startAnalysis = () => {
+  const startAnalysis = async () => {
     setIsAnalyzing(true);
     setScanProgress(0);
 
+    // Progress bar animation
     const interval = setInterval(() => {
       setScanProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          return 100;
-        }
+        if (prev >= 95) return 95; // Wait for actual response
         return prev + 5;
       });
     }, 100);
 
-    setTimeout(() => {
-      const db = getDiseaseDB(language);
-      const randomDisease = db[Math.floor(Math.random() * db.length)];
-      setResult(randomDisease);
+    try {
+      // Create FormData to send file
+      const formData = new FormData();
+
+      if (selectedFile) {
+        formData.append('image', selectedFile);
+      } else if (selectedImage && selectedImage.startsWith('data:image')) {
+        // Convert base64 to blob if it came from camera
+        const res = await fetch(selectedImage);
+        const blob = await res.blob();
+        formData.append('image', blob, 'camera-capture.jpg');
+      }
+
+      formData.append('language', language);
+
+      // --- OFFLINE FIRST INFERENCE ---
+      if (window.roboflowModel) {
+        console.log("Attempting local offline inference...");
+        try {
+          // Prepare image for local inference
+          let imageElementForInference;
+          let imageUrlForInference;
+
+          if (selectedFile) {
+            imageUrlForInference = URL.createObjectURL(selectedFile);
+          } else if (selectedImage && selectedImage.startsWith('data:image')) {
+            imageUrlForInference = selectedImage;
+          }
+
+          if (imageUrlForInference) {
+            const img = new Image();
+            img.src = imageUrlForInference;
+            await new Promise(resolve => img.onload = resolve);
+            imageElementForInference = img;
+
+            const predictions = await window.roboflowModel.detect(imageElementForInference);
+            console.log("Local predictions:", predictions);
+
+            if (predictions && predictions.length > 0) {
+              // Sort by confidence
+              predictions.sort((a, b) => b.confidence - a.confidence);
+              const topPrediction = predictions[0];
+
+              // Map to local DB ID
+              const diseaseId = mapDiseaseClass(topPrediction.class);
+              const localDB = getDiseaseDB(language);
+              const matchedDisease = localDB.find(d => d.id === diseaseId);
+
+              if (matchedDisease) {
+                // Simulate success response structure
+                const resultData = {
+                  ...matchedDisease,
+                  confidence: Math.round(topPrediction.confidence * 100),
+                  imageUrl: imageUrlForInference,
+                  usedAI: true,
+                  aiSource: 'offline-browser',
+                  originalClass: topPrediction.class
+                };
+
+                setResult(resultData);
+                setScanProgress(100);
+                setTimeout(() => {
+                  setIsAnalyzing(false);
+                  setView('result');
+                  clearInterval(interval);
+                }, 500);
+
+                // Clean up URL if created
+                if (selectedFile) URL.revokeObjectURL(imageUrlForInference);
+                return; // EXIT EARLY - Skip backend call
+              }
+            }
+          }
+        } catch (localError) {
+          console.error("Local inference failed, falling back to server:", localError);
+        }
+      }
+
+      // --- FALLBACK TO SERVER ---
+      const response = await fetch('http://localhost:5000/api/disease/analyze', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setResult(data.data);
+        setScanProgress(100);
+        setTimeout(() => {
+          setIsAnalyzing(false);
+          setView('result');
+          clearInterval(interval);
+        }, 500);
+      } else {
+        alert(data.message || 'Analysis failed');
+        setIsAnalyzing(false);
+        clearInterval(interval);
+        setView('dashboard');
+      }
+    } catch (error) {
+      console.error('Analysis error:', error);
+      alert('Error connecting to analysis server');
       setIsAnalyzing(false);
-      setView('result');
       clearInterval(interval);
-    }, 2500);
+      setView('dashboard');
+    }
   };
 
   const resetApp = () => {
@@ -1785,83 +2442,83 @@ const AuthenticatedApp = () => {
     if (!element || !window.html2canvas) return null;
 
     return await window.html2canvas(element, {
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        scale: 2,
-        ignoreElements: (element) => element.classList.contains('no-export')
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      scale: 2,
+      ignoreElements: (element) => element.classList.contains('no-export')
     });
   };
 
   const handleDownloadPdf = async () => {
     setShowSaveMenu(false);
     if (!window.html2canvas || !window.jspdf) {
-        showNotification("PDF generator not ready yet.", "error");
-        return;
+      showNotification("PDF generator not ready yet.", "error");
+      return;
     }
 
     try {
-        const canvas = await generateReportCanvas();
-        if (!canvas) return;
+      const canvas = await generateReportCanvas();
+      if (!canvas) return;
 
-        const imgData = canvas.toDataURL('image/jpeg', 0.9);
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const imgProps = pdf.getImageProperties(imgData);
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-        
-        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save(`FloraGuard-Report-${new Date().getTime()}.pdf`);
-        showNotification("PDF saved successfully!", "success");
+      const imgData = canvas.toDataURL('image/jpeg', 0.9);
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`FloraGuard-Report-${new Date().getTime()}.pdf`);
+      showNotification("PDF saved successfully!", "success");
     } catch (err) {
-        console.error("PDF generation failed:", err);
-        showNotification("Could not generate PDF.", "error");
+      console.error("PDF generation failed:", err);
+      showNotification("Could not generate PDF.", "error");
     }
   };
 
   const handleDownloadJpg = async () => {
     setShowSaveMenu(false);
     if (!window.html2canvas) {
-        showNotification("Image generator not ready yet.", "error");
-        return;
+      showNotification("Image generator not ready yet.", "error");
+      return;
     }
     try {
-        const canvas = await generateReportCanvas();
-        if (!canvas) return;
-        const data = canvas.toDataURL('image/jpeg', 0.9);
-        const link = document.createElement('a');
-        link.href = data;
-        link.download = `FloraGuard-Report-${new Date().getTime()}.jpg`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        showNotification("Image saved successfully!", "success");
+      const canvas = await generateReportCanvas();
+      if (!canvas) return;
+      const data = canvas.toDataURL('image/jpeg', 0.9);
+      const link = document.createElement('a');
+      link.href = data;
+      link.download = `FloraGuard-Report-${new Date().getTime()}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showNotification("Image saved successfully!", "success");
     } catch (err) {
-        console.error("Image generation failed:", err);
-        showNotification("Could not generate image.", "error");
+      console.error("Image generation failed:", err);
+      showNotification("Could not generate image.", "error");
     }
   };
 
   return (
     <>
-      <Navbar 
-        setView={setView} 
-        t={t} 
-        setShowLocationMenu={setShowLocationMenu} 
-        showLocationMenu={showLocationMenu} 
-        loadingWeather={loadingWeather} 
-        globalLocation={globalLocation} 
-        detectLocation={detectLocation} 
-        manualLocationQuery={manualLocationQuery} 
-        setManualLocationQuery={setManualLocationQuery} 
-        handleManualSearch={handleManualSearch} 
-        setShowLangMenu={setShowLangMenu} 
-        showLangMenu={showLangMenu} 
-        language={language} 
+      <Navbar
+        setView={setView}
+        t={t}
+        setShowLocationMenu={setShowLocationMenu}
+        showLocationMenu={showLocationMenu}
+        loadingWeather={loadingWeather}
+        globalLocation={globalLocation}
+        detectLocation={detectLocation}
+        manualLocationQuery={manualLocationQuery}
+        setManualLocationQuery={setManualLocationQuery}
+        handleManualSearch={handleManualSearch}
+        setShowLangMenu={setShowLangMenu}
+        showLangMenu={showLangMenu}
+        language={language}
         setLanguage={setLanguage}
       />
       <main className="container mx-auto max-w-4xl py-6 print:py-0 print:max-w-none">
-        {view === 'landing' && <LandingPage setView={setView} t={t} setShowLocationMenu={setShowLocationMenu} weather={weather} loadingWeather={loadingWeather} language={language} />}
+        {view === 'landing' && <LandingPage setView={setView} t={t} setShowLocationMenu={setShowLocationMenu} weather={weather} loadingWeather={loadingWeather} language={language} modelLoaded={modelLoaded} loadingModel={loadingModel} />}
         {view === 'dashboard' && <Dashboard setView={setView} t={t} fileInputRef={fileInputRef} handleImageUpload={handleImageUpload} />}
         {view === 'analyze' && <AnalyzeView isAnalyzing={isAnalyzing} scanProgress={scanProgress} t={t} selectedImage={selectedImage} resetApp={resetApp} startAnalysis={startAnalysis} />}
         {view === 'result' && <ResultView result={result} selectedImage={selectedImage} t={t} resetApp={resetApp} showSaveMenu={showSaveMenu} setShowSaveMenu={setShowSaveMenu} handleDownloadPdf={handleDownloadPdf} handleDownloadJpg={handleDownloadJpg} setShowSmsModal={setShowSmsModal} />}
@@ -1871,7 +2528,7 @@ const AuthenticatedApp = () => {
         {view === 'soil-analysis' && <SoilAnalysisView onBack={() => setView('landing')} language={language} />}
         {view === 'kisan-sahayak' && <KisanSahayakView onBack={() => setView('landing')} language={language} globalLocation={globalLocation} updateGlobalLocation={updateGlobalLocation} />}
       </main>
-      
+
       {notification && (
         <div className={`fixed bottom-24 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-lg z-50 text-sm font-semibold animate-fade-in flex items-center gap-2 ${notification.type === 'error' ? 'bg-red-500 text-white' : 'bg-gray-800 text-white'}`}>
           {notification.type === 'error' && <AlertTriangle className="w-4 h-4" />}
@@ -1881,13 +2538,13 @@ const AuthenticatedApp = () => {
       )}
 
       {showSmsModal && (
-        <SmsShareModal 
-          language={language} 
-          result={result} 
-          onClose={() => setShowSmsModal(false)} 
+        <SmsShareModal
+          language={language}
+          result={result}
+          onClose={() => setShowSmsModal(false)}
         />
       )}
-      
+
       <ChatWidget t={t} language={language} />
     </>
   );
