@@ -861,3 +861,465 @@ const ChatWidget = ({ t, language }) => {
       </div>
     );
 };
+
+// LandingPage Component
+const LandingPage = ({ setView, t, setShowLocationMenu, weather, loadingWeather, language }) => (
+    <div className="flex flex-col items-center justify-center min-h-[85vh] px-6 text-center animate-fade-in print:hidden">
+      <div className="bg-emerald-50 p-6 rounded-full mb-8 animate-bounce-slow ring-1 ring-emerald-100">
+        <Sprout className="w-16 h-16 text-emerald-600" />
+      </div>
+      
+      <h1 className="text-4xl md:text-6xl font-extrabold text-gray-900 mb-6 tracking-tight leading-tight">
+        {t.heroTitle} <br/>
+        <span className="text-emerald-600">{t.heroSubtitle}</span>
+      </h1>
+      
+      <p className="text-lg text-gray-600 max-w-2xl mb-10 leading-relaxed">
+        {t.heroDesc}
+      </p>
+
+      <div className="flex flex-col md:flex-row gap-4 mb-16 w-full max-w-2xl">
+        <button 
+          onClick={() => setView('dashboard')}
+          className="flex-1 px-4 py-4 bg-emerald-600 text-white font-bold text-lg rounded-2xl shadow-xl shadow-emerald-200 hover:shadow-2xl hover:bg-emerald-700 transition-all hover:-translate-y-1 overflow-hidden group"
+        >
+          <span className="flex items-center justify-center gap-2">
+            {t.startDiag} <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          </span>
+        </button>
+        <button 
+          onClick={() => setView('soil-analysis')}
+          className="flex-1 px-4 py-4 bg-amber-600 text-white font-bold text-lg rounded-2xl shadow-xl shadow-amber-200 hover:shadow-2xl hover:bg-amber-700 transition-all hover:-translate-y-1 overflow-hidden group"
+        >
+          <span className="flex items-center justify-center gap-2">
+            <Beaker className="w-5 h-5" /> {t.startSoil}
+          </span>
+        </button>
+        <button 
+          onClick={() => setView('kisan-sahayak')}
+          className="flex-1 px-4 py-4 bg-emerald-900 text-emerald-50 font-bold text-lg rounded-2xl shadow-xl shadow-emerald-900/20 hover:shadow-2xl hover:bg-emerald-800 transition-all hover:-translate-y-1 overflow-hidden"
+        >
+          <span className="flex items-center justify-center gap-2">
+             <HeartHandshake className="w-5 h-5" /> {t.kisanSupport}
+          </span>
+        </button>
+      </div>
+
+      <div className="w-full max-w-2xl mb-8">
+        <button 
+          onClick={() => setView('map')}
+          className="w-full bg-white border border-gray-200 text-emerald-700 font-bold py-3 rounded-xl shadow-sm hover:shadow-md hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+        >
+          <MapIcon className="w-5 h-5" /> {t.findStore}
+        </button>
+      </div>
+
+      <WeatherWidget 
+        language={language} 
+        weather={weather} 
+        loading={loadingWeather} 
+        onActivate={() => setShowLocationMenu(true)}
+      />
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl">
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+          <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-4 mx-auto text-blue-600"><Scan className="w-6 h-6" /></div>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">{t.instAnalysis}</h3>
+          <p className="text-sm text-gray-500">{t.instDesc}</p>
+        </div>
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+          <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center mb-4 mx-auto text-purple-600"><Stethoscope className="w-6 h-6" /></div>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">{t.expCure}</h3>
+          <p className="text-sm text-gray-500">{t.expDesc}</p>
+        </div>
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+          <div className="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center mb-4 mx-auto text-amber-600"><CheckCircle className="w-6 h-6" /></div>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">{t.acc}</h3>
+          <p className="text-sm text-gray-500">{t.accDesc}</p>
+        </div>
+      </div>
+    </div>
+);
+
+const Dashboard = ({ setView, t, fileInputRef, handleImageUpload }) => (
+    <div className="flex flex-col items-center justify-center pt-12 px-6 animate-fade-in print:hidden">
+      <div className="flex items-center gap-2 mb-8 text-gray-400 text-sm font-medium uppercase tracking-wider">
+        <div className="h-px w-8 bg-gray-300"></div>{t.diagTools}<div className="h-px w-8 bg-gray-300"></div>
+      </div>
+      <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8 text-center">{t.scanPrompt}</h2>
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden">
+        <div className="p-8 border-b border-dashed border-gray-200 bg-gray-50/50">
+          <div onClick={() => fileInputRef.current?.click()} className="border-2 border-emerald-500 border-dashed rounded-2xl h-48 flex flex-col items-center justify-center cursor-pointer hover:bg-emerald-50 transition-all group bg-white">
+            <div className="p-4 bg-emerald-100 rounded-full mb-4 group-hover:scale-110 transition-transform"><Upload className="w-8 h-8 text-emerald-600" /></div>
+            <span className="font-bold text-gray-800 text-lg">{t.uploadImg}</span>
+            <span className="text-sm text-gray-400 mt-1">{t.uploadDesc}</span>
+          </div>
+          <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
+        </div>
+        <div className="p-6 bg-white">
+          <button onClick={() => setView('camera')} className="w-full flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 transition-colors border border-gray-200 group">
+            <div className="flex items-center gap-4">
+              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg group-hover:bg-blue-100 transition-colors"><Camera className="w-6 h-6" /></div>
+              <div className="text-left"><span className="block font-semibold text-gray-800">{t.useCam}</span><span className="text-xs text-gray-500">{t.camDesc}</span></div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-gray-600" />
+          </button>
+        </div>
+      </div>
+      <button onClick={() => setView('landing')} className="mt-12 text-gray-400 hover:text-gray-600 text-sm font-medium flex items-center gap-2 transition-colors"><ArrowLeft className="w-4 h-4" /> {t.backHome}</button>
+    </div>
+);
+
+const CameraView = ({ setView, t, setSelectedImage }) => {
+    const videoRef = useRef(null);
+    const canvasRef = useRef(null);
+    const [hasPermission, setHasPermission] = useState(null);
+    const [facingMode, setFacingMode] = useState('environment');
+
+    useEffect(() => {
+      let stream = null;
+      const startCamera = async () => {
+        try {
+          if (videoRef.current && videoRef.current.srcObject) {
+            const tracks = videoRef.current.srcObject.getTracks();
+            tracks.forEach(track => track.stop());
+          }
+          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode } });
+          if (videoRef.current) { videoRef.current.srcObject = stream; setHasPermission(true); }
+        } catch (err) { setHasPermission(false); }
+      };
+      startCamera();
+      return () => { if (stream) stream.getTracks().forEach(track => track.stop()); };
+    }, [facingMode]);
+
+    const capturePhoto = () => {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      if (video && canvas) {
+        const context = canvas.getContext('2d');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        if (facingMode === 'user') { context.translate(canvas.width, 0); context.scale(-1, 1); }
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        setSelectedImage(canvas.toDataURL('image/jpeg'));
+        setView('analyze');
+      }
+    };
+
+    if (hasPermission === false) return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center animate-fade-in">
+          <div className="bg-red-100 p-4 rounded-full mb-4"><Camera className="w-8 h-8 text-red-500" /></div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">{t.camDenied}</h2>
+          <p className="text-gray-600 mb-6">{t.camDeniedDesc}</p>
+          <div className="flex gap-3">
+             <button onClick={() => setView('dashboard')} className="px-6 py-2 bg-gray-200 text-gray-700 rounded-xl font-medium">{t.goBack}</button>
+          </div>
+        </div>
+    );
+
+    return (
+      <div className="fixed inset-0 bg-black z-50 flex flex-col animate-fade-in">
+        <div className="flex-1 relative overflow-hidden flex items-center justify-center">
+          <video ref={videoRef} autoPlay playsInline className="absolute min-w-full min-h-full object-cover" style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }} />
+          <button onClick={() => setView('dashboard')} className="absolute top-6 right-6 p-2 bg-black/40 text-white rounded-full backdrop-blur-md"><X className="w-6 h-6" /></button>
+        </div>
+        <div className="h-32 bg-black flex items-center justify-center gap-8 pb-6">
+           <button onClick={() => setView('dashboard')} className="p-4 text-white/50 hover:text-white transition-colors"><span className="text-xs font-medium">{t.cancel}</span></button>
+           <button onClick={capturePhoto} className="w-16 h-16 rounded-full bg-white border-4 border-gray-300 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"><div className="w-12 h-12 rounded-full bg-emerald-500"></div></button>
+           <button onClick={() => setFacingMode(prev => prev === 'environment' ? 'user' : 'environment')} className="p-4 text-white/50 hover:text-white transition-colors flex flex-col items-center gap-1"><RefreshCw className="w-5 h-5" /><span className="text-[10px] font-medium">{t.flip}</span></button>
+        </div>
+        <canvas ref={canvasRef} className="hidden" />
+      </div>
+    );
+};
+
+const GuideView = ({ setView, t, language }) => (
+    <div className="px-6 pb-12 w-full max-w-md mx-auto animate-fade-in">
+      <div className="flex items-center gap-2 mb-6 mt-2 print:hidden">
+        <button onClick={() => setView('landing')} className="p-2 hover:bg-gray-100 rounded-full"><ArrowLeft className="w-5 h-5 text-gray-600" /></button>
+        <h2 className="text-xl font-bold text-gray-900">{t.careGuide}</h2>
+      </div>
+      <div className="space-y-4">
+        {getGuideData(language).map((item, i) => (
+          <div key={i} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex gap-4">
+            <div className="shrink-0 w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center">{item.icon}</div>
+            <div><h3 className="font-bold text-gray-800 mb-1">{item.title}</h3><p className="text-sm text-gray-600 leading-relaxed">{item.content}</p></div>
+          </div>
+        ))}
+        <div className="mt-8">
+           <h3 className="text-lg font-bold text-gray-900 mb-4 px-2">{t.commonIssues}</h3>
+           <div className="grid gap-3">
+             {getDiseaseDB(language).filter(d => d.id !== 'healthy').map((d, i) => (
+               <div key={i} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-3">
+                 <div className="p-2 bg-gray-50 rounded-lg">{d.icon}</div>
+                 <div className="flex-1"><div className="font-semibold text-gray-800 text-sm">{d.name}</div><div className="text-xs text-gray-500 truncate">{d.symptoms[0]}</div></div>
+                 <ChevronRight className="w-4 h-4 text-gray-300" />
+               </div>
+             ))}
+           </div>
+        </div>
+      </div>
+    </div>
+);
+
+const AnalyzeView = ({ isAnalyzing, scanProgress, t, selectedImage, resetApp, startAnalysis }) => (
+    <div className="flex flex-col items-center justify-center min-h-[80vh] px-6 w-full max-w-md mx-auto animate-fade-in print:hidden">
+      <div className="relative w-full aspect-square bg-gray-900 rounded-3xl overflow-hidden shadow-2xl mb-8 group">
+        <img src={selectedImage} alt="Analysis" className="w-full h-full object-cover opacity-80" />
+        {isAnalyzing && (
+          <div className="absolute inset-0 z-10">
+            <div className="w-full h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent shadow-[0_0_15px_rgba(52,211,153,0.8)] absolute top-0" style={{ top: `${scanProgress}%`, transition: 'top 0.1s linear' }} />
+            <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10"><span className="text-emerald-400 text-xs font-mono">{t.scanning} {scanProgress}%</span></div>
+          </div>
+        )}
+        {!isAnalyzing && <button onClick={resetApp} className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 backdrop-blur-md p-2 rounded-full text-white transition-colors"><X className="w-5 h-5" /></button>}
+      </div>
+      {!isAnalyzing ? (
+        <button onClick={startAnalysis} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-200 transition-all hover:scale-[1.02] flex items-center justify-center gap-2"><Scan className="w-5 h-5" />{t.runDiag}</button>
+      ) : (
+        <div className="w-full space-y-3">
+          <div className="flex justify-between text-sm font-medium text-gray-500"><span>{t.analyzing}</span><span>{scanProgress}%</span></div>
+          <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-emerald-500 transition-all duration-300 ease-out" style={{ width: `${scanProgress}%` }} /></div>
+        </div>
+      )}
+    </div>
+);
+
+const ResultView = ({ result, selectedImage, t, resetApp, showSaveMenu, setShowSaveMenu, handleDownloadPdf, handleDownloadJpg, setShowSmsModal }) => (
+    <div className="px-6 pb-12 w-full max-w-md mx-auto animate-slide-up print:px-0 print:max-w-none print:pb-0">
+      <div id="report-container" className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden mb-6 print:shadow-none print:border-none print:rounded-none">
+        <div className={`p-6 flex items-center gap-4 print:border-b print:border-gray-200 ${result.status === 'healthy' ? 'bg-emerald-50' : result.status === 'critical' ? 'bg-rose-50' : 'bg-amber-50'}`}>
+          <div className="bg-white p-2 rounded-full shadow-sm print:hidden">{result.icon}</div>
+          <div className="w-full">
+            <div className="flex justify-between items-start">
+               <div>
+                  <h2 className="text-xl font-bold text-gray-900">{result.name}</h2>
+                  <div className="flex items-center gap-2 mt-1 print:hidden">
+                    <div className="h-1.5 w-16 bg-gray-200 rounded-full overflow-hidden"><div className={`h-full rounded-full ${result.status === 'healthy' ? 'bg-emerald-500' : result.status === 'critical' ? 'bg-rose-500' : 'bg-amber-500'}`} style={{ width: `${result.confidence}%` }} /></div>
+                    <span className="text-xs font-semibold text-gray-500">{result.confidence}% {t.match}</span>
+                  </div>
+               </div>
+               <img src={selectedImage} className="hidden print:block w-24 h-24 object-cover rounded-lg border border-gray-200" alt="Analyzed Leaf" />
+            </div>
+            <div className="hidden print:block mt-2 text-xs text-gray-500">{t.generatedBy}</div>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-6">
+          <p className="text-gray-600 leading-relaxed text-sm">{result.description}</p>
+          <div><h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2"><Activity className="w-3 h-3" /> {t.symptoms}</h3><ul className="space-y-2">{result.symptoms.map((symptom, i) => (<li key={i} className="flex items-start gap-2 text-sm text-gray-700"><span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 print:bg-black" />{symptom}</li>))}</ul></div>
+          <div><h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2"><ShieldCheck className="w-3 h-3" /> {t.treatment}</h3><div className="bg-gray-50 rounded-xl p-4 border border-gray-100 print:bg-white print:border-none print:p-0"><ul className="space-y-3">{result.treatment.map((step, i) => (<li key={i} className="flex gap-3 text-sm text-gray-700"><span className="flex items-center justify-center w-5 h-5 rounded-full bg-white border border-gray-200 text-xs font-bold text-emerald-600 shrink-0 shadow-sm print:shadow-none print:border-black print:text-black">{i + 1}</span>{step}</li>))}</ul></div></div>
+        </div>
+
+        <div className="p-4 bg-gray-50 border-t border-gray-100 flex gap-3 print:hidden no-export">
+          <button onClick={resetApp} className="flex-1 bg-white border border-gray-200 text-gray-700 font-semibold py-3 rounded-xl hover:bg-gray-50 transition-colors text-sm">{t.newScan}</button>
+          <div className="relative flex-1">
+             <button onClick={() => setShowSaveMenu(!showSaveMenu)} className="w-full h-full bg-emerald-600 text-white font-semibold py-3 rounded-xl hover:bg-emerald-700 transition-colors text-sm shadow-md shadow-emerald-200 flex items-center justify-center gap-2"><Download className="w-4 h-4" />{t.saveReport}</button>
+              {showSaveMenu && (
+                <div className="absolute bottom-full right-0 mb-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 p-2 animate-fade-in z-20">
+                    <button onClick={handleDownloadPdf} className="w-full flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium text-left"><FileText className="w-4 h-4 text-rose-500" />{t.savePdf}</button>
+                    <button onClick={handleDownloadJpg} className="w-full flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium text-left"><ImageIcon className="w-4 h-4 text-blue-500" />{t.saveJpg}</button>
+                    <button 
+                      onClick={() => { setShowSaveMenu(false); setShowSmsModal(true); }}
+                      className="w-full flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium text-left border-t border-gray-100"
+                    >
+                      <MessageSquare className="w-4 h-4 text-emerald-500" />{t.sendSms}
+                    </button>
+                </div>
+              )}
+              {showSaveMenu && <div className="fixed inset-0 z-10" onClick={() => setShowSaveMenu(false)}></div>}
+          </div>
+        </div>
+      </div>
+      <div className="text-center text-xs text-gray-400 px-8 print:hidden">{t.disclaimer}</div>
+    </div>
+);
+
+const SmsShareModal = ({ language, result, onClose }) => {
+  const t = TRANSLATIONS[language];
+  const [selectedSpecialist, setSelectedSpecialist] = useState(null);
+  const [viewMode, setViewMode] = useState('list'); // 'list' | 'manual'
+  const [manualData, setManualData] = useState({ name: '', phone: '' });
+
+  const handleSendSms = () => {
+    let spec = selectedSpecialist;
+    if (viewMode === 'manual') {
+        if (!manualData.name || !manualData.phone) return;
+        spec = { 
+            id: 'manual', 
+            name: manualData.name, 
+            role: 'Custom Contact', 
+            phone: manualData.phone 
+        };
+    }
+
+    if (!spec || !result) return;
+    
+    // Construct the message body
+    const messageBody = `Krishi Sahayak Report:
+Disease: ${result.name}
+Confidence: ${result.confidence}%
+Crop Status: ${result.status}
+Please advise on treatment.`;
+
+    const encodedBody = encodeURIComponent(messageBody);
+    // Use sms: protocol to open default SMS app
+    window.open(`sms:${spec.phone}?body=${encodedBody}`, '_blank');
+    onClose();
+  };
+
+  const handleSaveContact = (e, spec) => {
+    e.stopPropagation(); 
+    
+    // Create vCard content
+    const vCardData = `BEGIN:VCARD
+VERSION:3.0
+FN:${spec.name}
+TEL;TYPE=CELL:${spec.phone}
+TITLE:${spec.role}
+NOTE:Krishi Sahayak Specialist
+END:VCARD`;
+
+    const blob = new Blob([vCardData], { type: 'text/vcard' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `${spec.name.replace(/\s+/g, '_')}.vcf`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+        <div className="bg-emerald-600 p-4 flex items-center justify-between text-white">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="w-5 h-5" />
+            <h3 className="font-bold">{t.connectSpec}</h3>
+          </div>
+          <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-full transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        
+        <div className="p-6">
+          {viewMode === 'list' ? (
+            <>
+                <h4 className="font-bold text-gray-800 mb-4 text-sm uppercase tracking-wide text-center">
+                    {t.selectSpec}
+                </h4>
+                
+                <div className="space-y-3 mb-6 max-h-60 overflow-y-auto pr-1">
+                    {NEARBY_SPECIALISTS.map(spec => (
+                    <div 
+                        key={spec.id}
+                        onClick={() => setSelectedSpecialist(spec)}
+                        className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
+                        selectedSpecialist?.id === spec.id 
+                            ? 'border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500' 
+                            : 'border-gray-200 hover:border-emerald-300 hover:bg-gray-50'
+                        }`}
+                    >
+                        <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-full ${selectedSpecialist?.id === spec.id ? 'bg-emerald-200 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                            <User className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <div className="font-bold text-gray-800 text-sm">{spec.name}</div>
+                            <div className="text-xs text-gray-500">{spec.role}</div>
+                        </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">
+                            <MapPin className="w-3 h-3" /> {spec.distance}
+                        </div>
+                        <button 
+                            onClick={(e) => handleSaveContact(e, spec)}
+                            className="p-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-200 hover:scale-110 active:scale-95 rounded-full transition-all shadow-sm border border-emerald-200"
+                            title={t.saveContact}
+                        >
+                            <UserPlus className="w-4 h-4" />
+                        </button>
+                        </div>
+                    </div>
+                    ))}
+                </div>
+
+                <div className="flex gap-2">
+                    <button 
+                        onClick={() => setViewMode('manual')}
+                        className="flex-1 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm"
+                    >
+                        <Plus className="w-4 h-4" /> {t.addManual}
+                    </button>
+                    <button 
+                        onClick={handleSendSms}
+                        disabled={!selectedSpecialist}
+                        className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm"
+                    >
+                        <Send className="w-4 h-4" /> {t.send}
+                    </button>
+                </div>
+            </>
+          ) : (
+            <div className="animate-fade-in">
+                <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-bold text-gray-800 text-sm uppercase tracking-wide">
+                        {t.manualEntry}
+                    </h4>
+                    <button onClick={() => setViewMode('list')} className="text-xs text-emerald-600 font-semibold hover:underline">
+                        {t.backToList}
+                    </button>
+                </div>
+
+                <div className="space-y-4 mb-6">
+                    <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">{t.enterName}</label>
+                        <input 
+                            type="text" 
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            placeholder="e.g. Dr. Amit Sharma"
+                            value={manualData.name}
+                            onChange={(e) => setManualData({...manualData, name: e.target.value})}
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-500 mb-1">{t.enterPhone}</label>
+                        <input 
+                            type="tel" 
+                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                            placeholder="e.g. 9876543210"
+                            value={manualData.phone}
+                            onChange={(e) => setManualData({...manualData, phone: e.target.value})}
+                        />
+                    </div>
+                </div>
+
+                <div className="flex gap-2">
+                    <button 
+                        onClick={() => {
+                            if(manualData.name && manualData.phone) {
+                                handleSaveContact({ stopPropagation: ()=>{} }, { name: manualData.name, phone: manualData.phone, role: 'Custom Contact' });
+                            }
+                        }}
+                        disabled={!manualData.name || !manualData.phone}
+                        className="flex-1 py-3 bg-blue-50 text-blue-700 rounded-xl font-bold hover:bg-blue-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
+                    >
+                        <UserPlus className="w-4 h-4" /> {t.saveContact}
+                    </button>
+                    <button 
+                        onClick={handleSendSms}
+                        disabled={!manualData.name || !manualData.phone}
+                        className="flex-1 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
+                    >
+                        <Send className="w-4 h-4" /> {t.send}
+                    </button>
+                </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
