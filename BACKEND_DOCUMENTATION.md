@@ -21,7 +21,20 @@ CORS_ORIGIN=http://localhost:5173
 JWT_SECRET=your-secret-key-here
 ANTHROPIC_API_KEY=your-anthropic-api-key
 OPENWEATHER_API_KEY=your-openweather-api-key
+
+# Roboflow Configuration
+ROBOFLOW_API_KEY=your-roboflow-api-key
+ROBOFLOW_WORKSPACE=your-workspace
+ROBOFLOW_WORKFLOW_ID=your-workflow-id
+
+# Offline Model Configuration (NEW)
+USE_OFFLINE_MODEL=false
+MODEL_PATH=./models/crop-disease-model.onnx
+MODEL_INPUT_SIZE=640
 ```
+
+**Offline Model**: Set `USE_OFFLINE_MODEL=true` to enable local ONNX inference. See [OFFLINE_MODEL_SETUP.md](OFFLINE_MODEL_SETUP.md) for detailed setup instructions.
+
 
 ---
 
@@ -382,6 +395,26 @@ All routes follow a consistent error response format:
    - AI chatbot functionality
    - Model: Claude 3 Sonnet
    - Requires `ANTHROPIC_API_KEY`
+
+3. **Roboflow AI (Cloud/Offline)**
+   - **Cloud Mode**: Serverless workflow API for disease detection
+   - **Offline Mode**: Local ONNX model inference
+   - Requires `ROBOFLOW_API_KEY` for cloud mode
+   - Requires `.onnx` model file for offline mode
+   - **Fallback Chain**: Offline → Cloud → Mock data
+   - See [OFFLINE_MODEL_SETUP.md](OFFLINE_MODEL_SETUP.md) for offline setup
+
+## Services
+
+**New Offline Inference Services:**
+- `services/offline_inference.service.js` - ONNX Runtime inference engine
+- `services/model_downloader.js` - Interactive model download utility
+- `services/roboflow.service.js` - Updated with offline/online fallback
+
+**Inference Modes:**
+- `offline` - Uses local ONNX model (fastest, no internet)
+- `online` - Uses Roboflow cloud API (requires internet)
+- `unavailable` - Falls back to mock data
 
 ---
 

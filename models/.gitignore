@@ -1,0 +1,8 @@
+# Ignore model files (they can be large)
+*.onnx
+*.pb
+*.h5
+*.tflite
+
+# Keep example metadata
+!example-metadata.json

@@ -1,6 +1,7 @@
 const axios = require('axios');
 const FormData = require('form-data');
 const fs = require('fs');
+const offlineInferenceService = require('./offline_inference.service');
 
 class RoboflowService {
     constructor() {
@@ -9,14 +10,64 @@ class RoboflowService {
         this.apiKey = process.env.ROBOFLOW_API_KEY;
         this.workspaceName = process.env.ROBOFLOW_WORKSPACE || 'kart-app-dev';
         this.workflowId = process.env.ROBOFLOW_WORKFLOW_ID || 'detect-and-classify';
+        this.useOfflineModel = process.env.USE_OFFLINE_MODEL === 'true';
+
+        // Initialize offline model if enabled
+        if (this.useOfflineModel) {
+            this.initializeOfflineModel();
+        }
+    }
+
+    /**
+     * Initialize offline inference model
+     */
+    async initializeOfflineModel() {
+        try {
+            console.log('Initializing offline model...');
+            await offlineInferenceService.loadMetadata();
+            await offlineInferenceService.initialize();
+        } catch (error) {
+            console.warn('Failed to initialize offline model:', error.message);
+            console.log('Will fall back to online API when needed');
+        }
     }
 
     /**
      * Analyze plant image using Roboflow workflow
+     * Tries offline model first, then falls back to online API
      * @param {string} imagePath - Path to the uploaded image
      * @returns {Promise<Object>} Detection results
      */
     async analyzeImage(imagePath) {
+        // Try offline inference first if enabled
+        if (this.useOfflineModel) {
+            try {
+                console.log('Attempting offline inference...');
+                const offlineResult = await offlineInferenceService.predict(imagePath);
+
+                if (offlineResult.detected || offlineResult.confidence > 0) {
+                    console.log('✓ Using offline model inference');
+                    return {
+                        ...offlineResult,
+                        source: 'offline'
+                    };
+                }
+            } catch (offlineError) {
+                console.warn('Offline inference failed:', offlineError.message);
+                console.log('Falling back to online API...');
+            }
+        }
+
+        // Fall back to online API
+        return await this.analyzeImageOnline(imagePath);
+    }
+
+    /**
+     * Analyze plant image using online Roboflow workflow API
+     * @param {string} imagePath - Path to the uploaded image
+     * @returns {Promise<Object>} Detection results
+     */
+    async analyzeImageOnline(imagePath) {
         try {
             if (!this.apiKey) {
                 throw new Error('Roboflow API key not configured');
@@ -46,7 +97,13 @@ class RoboflowService {
                 }
             );
 
-            return this.parseWorkflowResponse(response.data);
+            const result = this.parseWorkflowResponse(response.data);
+            console.log('✓ Using online API inference');
+
+            return {
+                ...result,
+                source: 'online'
+            };
         } catch (error) {
             console.error('Roboflow API Error:', error.message);
 
@@ -130,8 +187,23 @@ class RoboflowService {
      * @returns {boolean}
      */
     isConfigured() {
-        return !!this.apiKey;
+        // Service is configured if either offline model is available or API key exists
+        return offlineInferenceService.isAvailable() || !!this.apiKey;
+    }
+
+    /**
+     * Get current inference mode
+     * @returns {string} 'offline', 'online', or 'unavailable'
+     */
+    getInferenceMode() {
+        if (this.useOfflineModel && offlineInferenceService.isAvailable()) {
+            return 'offline';
+        } else if (this.apiKey) {
+            return 'online';
+        }
+        return 'unavailable';
     }
 }
 
 module.exports = new RoboflowService();
+

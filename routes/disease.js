@@ -205,15 +205,17 @@ router.post('/analyze', upload.single('image'), async (req, res) => {
                         detectedDisease = {
                             ...matchedDisease,
                             confidence: roboflowResult.confidence,
-                            aiSource: 'roboflow',
+                            aiSource: roboflowResult.source || 'roboflow',
                             roboflowDetails: roboflowResult.details
                         };
                         usedRoboflow = true;
-                        console.log(`Roboflow detected: ${roboflowResult.disease} (${roboflowResult.confidence.toFixed(2)}%)`);
+                        console.log(`Roboflow detected (${roboflowResult.source || 'unknown'}): ${roboflowResult.disease} (${roboflowResult.confidence.toFixed(2)}%)`);
                     }
+                } else {
+                    console.log('Roboflow returned no detection, using fallback');
                 }
             } catch (roboflowError) {
-                console.error('Roboflow API error, falling back to mock data:', roboflowError.message);
+                console.error('Roboflow error, falling back to mock data:', roboflowError.message);
             }
         } else {
             console.log('Roboflow not configured, using mock detection');
