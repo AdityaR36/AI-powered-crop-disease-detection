@@ -1323,3 +1323,208 @@ END:VCARD`;
     </div>
   );
 };
+
+// --- Auth Page Component ---
+const AuthPage = ({ onLogin }) => {
+  const [formData, setFormData] = useState({
+    fullName: '',
+    phone: '',
+    state: '',
+    language: 'Hindi'
+  });
+
+  const [submitted, setSubmitted] = useState(false);
+
+  // Using a sample Unsplash image for the background
+  const bgImage = "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?q=80&w=2070&auto=format&fit=crop"; 
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setSubmitted(true);
+    // Simulate generic "offline" save
+    setTimeout(() => {
+      // alert("Registration Saved Locally! Ready for diagnosis."); // Optional: Use toast instead
+      setSubmitted(false);
+      onLogin(); // Call the parent function to switch state
+    }, 1500);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center relative overflow-hidden font-sans">
+      
+      {/* Background Image Area */}
+      <div className="absolute inset-0 z-0">
+        <img 
+          src={bgImage} 
+          alt="Farmer in field" 
+          className="w-full h-full object-cover"
+        />
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-900/90 via-emerald-800/80 to-transparent sm:to-emerald-900/40"></div>
+      </div>
+
+      {/* Main Content Container */}
+      <div className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between h-full py-8 md:py-0">
+        
+        {/* Left Side: Value Prop (Visible on Desktop) */}
+        <div className="hidden md:block w-full md:w-1/2 text-white pr-12">
+          <div className="flex items-center space-x-2 mb-6">
+            <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg">
+              <Leaf size={32} className="text-emerald-300" />
+            </div>
+            <span className="text-sm font-semibold tracking-wider uppercase text-emerald-200">Offline First Technology</span>
+          </div>
+          
+          <h1 className="text-5xl font-bold leading-tight mb-6">
+            Instant Crop Diagnosis, <br/>
+            <span className="text-emerald-300">No Internet Needed.</span>
+          </h1>
+          
+          <p className="text-xl text-gray-200 mb-8 max-w-lg leading-relaxed">
+            Take a photo of any leaf and get expert advice in your local language. 
+            Our AI runs directly on your phone to save your yield.
+          </p>
+
+          <div className="flex items-center space-x-6 text-sm font-medium text-emerald-100">
+            <div className="flex items-center">
+              <WifiOff size={20} className="mr-2" />
+              Works Offline
+            </div>
+            <div className="flex items-center">
+              <Camera size={20} className="mr-2" />
+              Instant Results
+            </div>
+          </div>
+        </div>
+
+        {/* Right Side: Sign Up Card */}
+        <div className="w-full md:w-1/2 max-w-md ml-auto">
+          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
+            
+            {/* Mobile Header (Visible only on mobile) */}
+            <div className="md:hidden bg-emerald-700 p-6 text-white text-center">
+              <Leaf size={40} className="mx-auto mb-2 text-emerald-300" />
+              <h2 className="text-2xl font-bold">Krishi Sahayak</h2>
+              <p className="text-emerald-100 text-sm mt-1">Crop Health Diagnostic System</p>
+            </div>
+
+            <div className="p-8">
+              <div className="mb-8 text-center md:text-left">
+                <h3 className="text-2xl font-bold text-gray-900 hidden md:block">Get Started</h3>
+                <p className="text-gray-500 mt-2">Create your farmer profile to access offline tools.</p>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-5">
+                
+                {/* Language Selector */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Language</label>
+                  <div className="relative">
+                    <select 
+                      name="language"
+                      value={formData.language}
+                      onChange={handleInputChange}
+                      className="w-full pl-4 pr-10 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 appearance-none text-gray-700 transition-all"
+                    >
+                      <option>English</option>
+                      <option>Hindi (हिंदी)</option>
+                      <option>Marathi (मराठी)</option>
+                      <option>Punjabi (ਪੰਜਾਬੀ)</option>
+                      <option>Tamil (தமிழ்)</option>
+                      <option>Telugu (తెలుగు)</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-3.5 text-gray-400 pointer-events-none" size={18} />
+                  </div>
+                </div>
+
+                {/* Name Field */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <User size={18} className="text-gray-400" />
+                    </div>
+                    <input
+                      type="text"
+                      name="fullName"
+                      required
+                      placeholder="e.g. Rajesh Kumar"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                      value={formData.fullName}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+
+                {/* Phone Number */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Phone size={18} className="text-gray-400" />
+                    </div>
+                    <input
+                      type="tel"
+                      name="phone"
+                      required
+                      placeholder="98765 43210"
+                      pattern="[0-9]{10}"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+
+                {/* Location (Full Width) */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">State/Region</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <MapPin size={18} className="text-gray-400" />
+                    </div>
+                    <input
+                      type="text"
+                      name="state"
+                      placeholder="State"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      value={formData.state}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={submitted}
+                  className="w-full flex items-center justify-center py-4 px-4 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all transform hover:-translate-y-0.5"
+                >
+                  {submitted ? (
+                    <>
+                      <CheckCircle className="animate-spin mr-2" size={20} />
+                      Setting up Offline Mode...
+                    </>
+                  ) : (
+                    "Sign In"
+                  )}
+                </button>
+
+                <p className="text-xs text-center text-gray-400 mt-4">
+                  By registering, you agree to allow offline storage of crop data on this device.
+                </p>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
