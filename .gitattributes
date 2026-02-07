@@ -1,4 +1,127 @@
-# Auto detect text files and perform LF normalization
-* text=auto
-hackathon
-I am a hackathon participant
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Upload, 
+  Camera, 
+  Scan, 
+  CheckCircle, 
+  AlertTriangle, 
+  Leaf, 
+  Info, 
+  X, 
+  ChevronRight, 
+  Droplets, 
+  Sun, 
+  Wind,
+  ShieldCheck,
+  Activity
+} from 'lucide-react';
+
+// --- Mock Database of Plant Diseases ---
+const DISEASE_DB =[
+    {
+        id:'healthy',
+        name:'healthy plant',
+        status:'healthy',
+        confidence: 98.5,
+        description:'Your plant looks vigorous and healthy. No signs of pathogens or nutrient deficiencies found.',
+        symptoms: ['Vibrant green leaves', 'Strong stems', 'No discoloration'],
+        treatment: ['Continue regular watering schedule.', 'Maintain current sunlight exposure.', 'Monitor for pests as usual.'],
+        icon: <CheckCircle className="w-12 h-12 text-emerald-500" />
+
+
+    },
+    { 
+        id:'powdery_mildew',
+        name:'powdery mildew',
+        status:'diseased',
+        confidence: 92.3,
+        description:'Powdery mildew is a fungal disease that appears as white powdery spots on leaves and stems. It can weaken the plant if left untreated.',
+        symptoms: ['White powdery spots on leaves', 'Yellowing of leaves', 'Distorted growth'],
+        treatment: ['Remove affected leaves and dispose of them properly.', 'Apply fungicide according to label instructions.', 'Increase air circulation around the plant.'],
+        icon: <AlertTriangle className="w-12 h-12 text-yellow-500" />
+
+
+    },
+    {
+        id:'leaf_spot',
+        name:'leaf spot',
+        status:'diseased',
+        confidence: 88.7,
+        description:'Leaf spot is a common fungal disease that causes dark, circular spots on leaves. It can lead to leaf drop if not managed.',
+        symptoms: ['Dark circular spots on leaves', 'Yellow halos around spots', 'Premature leaf drop'],
+        treatment: ['Remove and destroy affected leaves.', 'Apply fungicide as recommended.', 'Avoid overhead watering to reduce humidity.'],
+        icon: <AlertTriangle className="w-12 h-12 text-yellow-500" />
+    },
+    {
+        id:'nutrient_deficiency',
+        name:'nutrient deficiency',
+        status:'diseased',
+        confidence: 85.4,
+        description:'Nutrient deficiencies can cause various symptoms such as yellowing leaves, stunted growth, and poor flowering. Identifying the specific deficiency is crucial for treatment.',
+        symptoms: ['Yellowing of leaves', 'Stunted growth', 'Poor flowering'],
+        treatment: ['Conduct a soil test to identify specific nutrient deficiencies.', 'Apply appropriate fertilizers based on soil test results.', 'Ensure proper watering to facilitate nutrient uptake.'],
+        icon: <AlertTriangle className="w-12 h-12 text-yellow-500" />
+    },
+     {
+    id: 'early_blight',
+    name: 'Early Blight',
+    status: 'disease',
+    confidence: 89.2,
+    description: 'A common fungal disease affecting tomatoes and potatoes. It causes concentric rings on leaves.',
+    symptoms: ['Dark brown spots with concentric rings', 'Yellowing of lower leaves', 'Stem cankers'],
+    treatment: ['Remove infected lower leaves.', 'Apply copper-based fungicides.', 'Ensure good air circulation around the plant.', 'Avoid overhead watering.'],
+    icon: <AlertTriangle className="w-12 h-12 text-amber-500" />
+  },
+  {
+    id: 'late_blight',
+    name: 'Late Blight',
+    status: 'disease',
+    confidence: 91.5,
+    description: 'A devastating disease that affects tomatoes and potatoes, causing dark lesions on leaves and fruit.',
+    symptoms: ['Dark, water-soaked lesions on leaves', 'White fungal growth on the underside of leaves', 'Rotting of fruit'],
+    treatment: ['Remove and destroy infected plant material.', 'Apply fungicides containing chlorothalonil or copper.', 'Practice crop rotation to prevent recurrence.'],
+    icon: <AlertTriangle className="w-12 h-12 text-red-500" />
+  },
+  {
+    id: 'septoria_leaf_spot',
+    name: 'Septoria Leaf Spot',
+    status: 'disease',
+    confidence: 87.8,
+    description: 'A common fungal disease that causes small, circular spots on leaves, leading to defoliation.',
+    symptoms: ['Small, circular spots with gray centers and dark borders', 'Yellowing of leaves', 'Premature leaf drop'],
+    treatment: ['Remove and destroy infected leaves.', 'Apply fungicides containing chlorothalonil or copper.', 'Ensure proper spacing between plants for good air circulation.'],
+    icon: <AlertTriangle className="w-12 h-12 text-yellow-500" />
+  },
+  {
+    id: 'bacterial_spot',
+    name: 'Bacterial Spot',
+    status: 'disease',
+    confidence: 90.1,
+    description: 'A bacterial disease that causes dark, water-soaked spots on leaves and fruit, leading to defoliation and fruit rot.',
+    symptoms: ['Dark, water-soaked spots on leaves and fruit', 'Yellow halos around spots', 'Defoliation and fruit rot'],
+    treatment: ['Remove and destroy infected plant material.', 'Apply copper-based bactericides.', 'Practice crop rotation to prevent recurrence.'],
+    icon: <AlertTriangle className="w-12 h-12 text-yellow-500" />
+  },
+  {
+    id: 'fusarium_wilt',
+    name: 'Fusarium Wilt',
+    status: 'disease',
+    confidence: 88.4,
+    description: 'A soil-borne fungal disease that causes wilting and yellowing of leaves, often leading to plant death.',
+    symptoms: ['Wilting of leaves', 'Yellowing of lower leaves', 'Brown discoloration in the stem'],
+    treatment: ['Remove and destroy infected plants.', 'Apply fungicides containing thiophanate-methyl.', 'Practice crop rotation and avoid planting in infested soil.'],
+    icon: <AlertTriangle className="w-12 h-12 text-red-500" />
+  },
+  {
+    id: 'verticillium_wilt',
+    name: 'Verticillium Wilt',
+    status: 'disease',
+    confidence: 86.7,
+    description: 'A soil-borne fungal disease that causes wilting and yellowing of leaves, often leading to plant death.',
+    symptoms: ['Wilting of leaves', 'Yellowing of lower leaves', 'Brown discoloration in the stem'],
+    treatment: ['Remove and destroy infected plants.', 'Apply fungicides containing thiophanate-methyl.', 'Practice crop rotation and avoid planting in infested soil.'],
+    icon: <AlertTriangle className="w-12 h-12 text-yellow-500" />
+  },
+   
+];
+
