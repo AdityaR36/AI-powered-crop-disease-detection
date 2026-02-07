@@ -614,4 +614,250 @@ const LocationMap = ({ lat, lng, className = "" }) => {
   );
 };
 
- 
+ const WeatherWidget = ({ language, weather, loading, onActivate }) => {
+  const t = TRANSLATIONS[language];
+
+  if (loading) {
+    return (
+      <div className="w-full max-w-5xl bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-center gap-2 animate-pulse mb-8 mx-auto">
+        <Loader2 className="w-5 h-5 text-emerald-500 animate-spin" />
+        <span className="text-gray-500 text-sm">{t.loadingWeather}</span>
+      </div>
+    );
+  }
+
+  if (!weather) {
+    return (
+      <div 
+        onClick={onActivate}
+        className="w-full max-w-2xl bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-12 mx-auto flex items-center justify-between cursor-pointer hover:border-emerald-300 transition-colors group"
+      >
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-blue-50 rounded-full text-blue-500 group-hover:bg-blue-100 transition-colors">
+            <CloudRain className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="font-bold text-gray-800">{t.weatherTitle}</h3>
+            <p className="text-xs text-gray-500">{t.setLocationPrompt}</p>
+          </div>
+        </div>
+        <div className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-lg text-sm font-semibold group-hover:bg-emerald-100 transition-colors">
+          {t.detectLoc}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-2xl bg-gradient-to-br from-blue-50 to-emerald-50 rounded-2xl p-6 shadow-sm border border-blue-100 mb-12 mx-auto">
+      <div className="flex items-center gap-2 mb-4">
+        <CloudRain className="w-5 h-5 text-blue-500" />
+        <h3 className="font-bold text-gray-800">{t.weatherTitle}</h3>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-6">
+        {/* Weather Status */}
+        <div className="flex-1 bg-white/60 rounded-xl p-4 backdrop-blur-sm">
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="text-4xl font-bold text-gray-900 mb-1">{weather.temp}°C</div>
+              <div className="text-emerald-700 font-medium">{weather.condition}</div>
+            </div>
+            {weather.condition === 'Sunny' || weather.condition === 'Clear' ? (
+              <Sun className="w-10 h-10 text-orange-400" />
+            ) : (
+              <Cloud className="w-10 h-10 text-gray-400" />
+            )}
+          </div>
+          <div className="mt-4 flex gap-4 text-xs text-gray-500">
+            <div className="flex items-center gap-1">
+              <Droplets className="w-3 h-3" /> {t.humidity}: {weather.humidity}%
+            </div>
+            <div className="flex items-center gap-1">
+              <Wind className="w-3 h-3" /> {t.wind}: {weather.wind} km/h
+            </div>
+          </div>
+          <div className="mt-2 text-xs text-gray-400 flex items-center gap-1">
+            <MapPin className="w-3 h-3" /> {weather.location}
+          </div>
+        </div>
+
+        {/* Crop Recommendations */}
+        <div className="flex-1">
+          <h4 className="text-sm font-bold text-gray-700 mb-3">{t.suitableCrops}</h4>
+          <div className="grid grid-cols-3 gap-2">
+            {weather.crops.map((crop, idx) => (
+              <div key={idx} className="bg-white p-2 rounded-lg text-center shadow-sm border border-gray-100">
+                <div className="text-xl mb-1">{crop.icon}</div>
+                <div className="text-xs font-medium text-gray-800">
+                  {crop.name[language] || crop.name['en']}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Navbar = ({ setView, t, setShowLocationMenu, showLocationMenu, loadingWeather, globalLocation, detectLocation, manualLocationQuery, setManualLocationQuery, handleManualSearch, setShowLangMenu, showLangMenu, language, setLanguage }) => (
+    <nav className="flex items-center justify-between px-6 py-4 bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-emerald-100 print:hidden">
+      <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('landing')}>
+        <div className="bg-emerald-600 p-2 rounded-lg">
+          <Leaf className="w-5 h-5 text-white" />
+        </div>
+        <span className="text-xl font-bold text-gray-800 tracking-tight">{t.appTitle}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="relative">
+          <button 
+            onClick={() => setShowLocationMenu(!showLocationMenu)}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 flex items-center gap-1"
+            title={t.detectLoc}
+          >
+            <Crosshair className={`w-5 h-5 ${loadingWeather ? 'animate-spin' : ''}`} />
+            <span className="text-xs font-semibold hidden sm:block uppercase max-w-[100px] truncate">
+              {loadingWeather ? '...' : (globalLocation ? globalLocation.name.split(',')[0] : t.detectLoc)}
+            </span>
+          </button>
+
+          {showLocationMenu && (
+            <>
+              <div 
+                className="fixed inset-0 z-10" 
+                onClick={() => setShowLocationMenu(false)} 
+              />
+              <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 p-4 z-20 overflow-hidden animate-fade-in">
+                <h4 className="text-sm font-bold text-gray-700 mb-3">{t.manualLoc}</h4>
+                
+                <button 
+                  onClick={detectLocation}
+                  className="w-full flex items-center justify-center gap-2 py-2 bg-emerald-50 text-emerald-700 rounded-lg hover:bg-emerald-100 transition-colors mb-3 text-sm font-semibold"
+                >
+                  <Crosshair className="w-4 h-4" />
+                  {t.useGPS}
+                </button>
+
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="h-px bg-gray-200 flex-1"></div>
+                  <span className="text-xs text-gray-400">OR</span>
+                  <div className="h-px bg-gray-200 flex-1"></div>
+                </div>
+
+                <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    value={manualLocationQuery}
+                    onChange={(e) => setManualLocationQuery(e.target.value)}
+                    placeholder={t.enterCity}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    onKeyDown={(e) => e.key === 'Enter' && handleManualSearch(manualLocationQuery)}
+                  />
+                  <button 
+                    onClick={() => handleManualSearch(manualLocationQuery)}
+                    disabled={!manualLocationQuery.trim()}
+                    className="p-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+                  >
+                    <Search className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="relative">
+          <button 
+            onClick={() => setShowLangMenu(!showLangMenu)}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500 flex items-center gap-1"
+          >
+            <Globe className="w-5 h-5" />
+            <span className="text-xs font-semibold uppercase">{language}</span>
+          </button>
+          
+          {showLangMenu && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setShowLangMenu(false)} />
+              <div className="absolute right-0 top-full mt-2 w-32 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-20 overflow-hidden animate-fade-in">
+                <button onClick={() => { setLanguage('en'); setShowLangMenu(false); }} className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${language === 'en' ? 'text-emerald-600 font-bold bg-emerald-50' : 'text-gray-700'}`}>English</button>
+                <button onClick={() => { setLanguage('hi'); setShowLangMenu(false); }} className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${language === 'hi' ? 'text-emerald-600 font-bold bg-emerald-50' : 'text-gray-700'}`}>हिंदी (Hindi)</button>
+                <button onClick={() => { setLanguage('ta'); setShowLangMenu(false); }} className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${language === 'ta' ? 'text-emerald-600 font-bold bg-emerald-50' : 'text-gray-700'}`}>தமிழ் (Tamil)</button>
+              </div>
+            </>
+          )}
+        </div>
+        
+        <button 
+          onClick={() => setView('guide')}
+          className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
+          title={t.viewGuides}
+        >
+          <BookOpen className="w-5 h-5" />
+        </button>
+      </div>
+    </nav>
+);
+
+const ChatWidget = ({ t, language }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [messages, setMessages] = useState([]);
+    const [input, setInput] = useState("");
+    const messagesEndRef = useRef(null);
+
+    useEffect(() => {
+        setMessages([{ id: 1, text: t.chatWelcome, sender: 'ai' }]);
+    }, [language]);
+
+    useEffect(() => { if (isOpen) messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, isOpen]);
+
+    const handleSend = (e) => {
+      e.preventDefault();
+      if (!input.trim()) return;
+      const userMsg = { id: Date.now(), text: input, sender: 'user' };
+      setMessages(prev => [...prev, userMsg]);
+      setInput("");
+      setTimeout(() => {
+        let responseText = "";
+        if (language === 'hi') responseText = "पौधों के बारे में यह एक अच्छा सवाल है! मिट्टी की नमी और रोशनी की जाँच ज़रूर करें।";
+        else if (language === 'ta') responseText = "தாவரங்களைப் பற்றிய அருமையான கேள்வி! மண் ஈரப்பதம் மற்றும் ஒளி நிலைகளை சரிபார்க்கவும்.";
+        else responseText = "That's a great question about plants! Make sure to check the soil moisture and light conditions.";
+        
+        setMessages(prev => [...prev, { id: Date.now() + 1, text: responseText, sender: 'ai' }]);
+      }, 1000);
+    };
+
+    return (
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end print:hidden">
+        {isOpen && (
+          <div className="mb-4 w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-fade-in flex flex-col max-h-[500px]">
+            <div className="bg-emerald-600 p-4 flex items-center justify-between text-white">
+              <div className="flex items-center gap-2">
+                <div className="bg-white/20 p-1.5 rounded-lg"><Bot className="w-5 h-5" /></div>
+                <div>
+                    <h3 className="font-bold text-sm">{t.botName}</h3>
+                    <div className="flex items-center gap-1.5"><span className="w-2 h-2 bg-emerald-300 rounded-full animate-pulse"></span><span className="text-[10px] opacity-90">{t.chatOnline}</span></div>
+                </div>
+              </div>
+              <button onClick={() => setIsOpen(false)} className="p-1 hover:bg-white/20 rounded-full transition-colors"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4 h-80">
+              {messages.map((msg) => (
+                <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.sender === 'user' ? 'bg-emerald-600 text-white rounded-br-none' : 'bg-white border border-gray-200 text-gray-700 rounded-bl-none shadow-sm'}`}>{msg.text}</div>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+            <form onSubmit={handleSend} className="p-3 bg-white border-t border-gray-100 flex gap-2">
+              <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder={t.chatPlaceholder} className="flex-1 bg-gray-100 text-sm rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/20" />
+              <button type="submit" disabled={!input.trim()} className="bg-emerald-600 text-white p-2.5 rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"><Send className="w-4 h-4" /></button>
+            </form>
+          </div>
+        )}
+        <button onClick={() => setIsOpen(!isOpen)} className={`p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110 active:scale-95 ${isOpen ? 'bg-gray-200 text-gray-600 rotate-90' : 'bg-emerald-600 text-white'}`}>
+          {isOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
+        </button>
+      </div>
+    );
+};
