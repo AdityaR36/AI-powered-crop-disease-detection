@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Upload, 
   Camera, 
@@ -202,3 +202,416 @@ const getGuideData = (lang) => [
       : "Regularly inspect the undersides of leaves. Wiping leaves with a damp cloth can prevent dust buildup and discourage mites."
   }
 ];
+
+const getGovernmentSchemes = (lang) => [
+  {
+    id: 1,
+    title: lang === 'hi' ? "पीएम फसल बीमा योजना (PMFBY)" : lang === 'ta' ? "PM பயிர் காப்பீட்டுத் திட்டம் (PMFBY)" : "PM Fasal Bima Yojana (PMFBY)",
+    description: lang === 'hi' 
+      ? "फसल बीमा योजना जो अप्रत्याशित घटनाओं से उत्पन्न फसल हानि/क्षति से पीड़ित किसानों को वित्तीय सहायता प्रदान करती है।"
+      : lang === 'ta'
+      ? "எதிர்பாராத நிகழ்வுகளால் ஏற்படும் பயிர் இழப்பு/சேதத்தால் பாதிக்கப்பட்ட விவசாயிகளுக்கு நிதியுதவி வழங்கும் பயிர் காப்பீட்டுத் திட்டம்."
+      : "Crop insurance scheme that provides financial support to farmers suffering crop loss/damage arising out of unforeseen events.",
+    icon: <ShieldCheck className="w-6 h-6 text-blue-600" />,
+    link: "https://pmfby.gov.in/"
+  },
+  {
+    id: 2,
+    title: lang === 'hi' ? "पीएम-किसान सम्मान निधि" : lang === 'ta' ? "PM-கிசான் சம்மான் நிதி" : "PM-Kisan Samman Nidhi",
+    description: lang === 'hi'
+      ? "सभी भूमिधारी किसान परिवारों को प्रति वर्ष ₹6,000 की आय सहायता, जिसका उद्देश्य कृषि के लिए इनपुट खरीदने में मदद करना है।"
+      : lang === 'ta'
+      ? "அனைத்து நிலம் வைத்திருக்கும் விவசாயக் குடும்பங்களுக்கும் ஆண்டுக்கு ₹6,000 வருமான ஆதரவு."
+      : "Income support of ₹6,000 per year to all landholding farmer families, aimed at helping you procure inputs for agriculture.",
+    icon: <HeartHandshake className="w-6 h-6 text-green-600" />,
+    link: "https://pmkisan.gov.in/"
+  },
+  {
+    id: 3,
+    title: lang === 'hi' ? "किसान क्रेडिट कार्ड (KCC)" : lang === 'ta' ? "கிசான் கிரெடிட் கார்டு (KCC)" : "Kisan Credit Card (KCC)",
+    description: lang === 'hi'
+      ? "खेती और अन्य जरूरतों के लिए बैंकिंग प्रणाली से पर्याप्त और समय पर ऋण सहायता प्रदान करता है।"
+      : lang === 'ta'
+      ? "சாகுபடி மற்றும் பிறத் தேவைகளுக்கு வங்கி அமைப்பிலிருந்து போதுமான மற்றும் சரியான நேரத்தில் கடன் ஆதரவை வழங்குகிறது."
+      : "Provides adequate and timely credit support from the banking system for cultivation and other needs.",
+    icon: <Leaf className="w-6 h-6 text-yellow-600" />,
+    link: "https://myscheme.gov.in/schemes/kcc"
+  }
+];
+
+const simulateWeatherAnalysis = () => {
+  const forecasts = [
+    { type: 'Drought-prone', detail: 'Low rainfall expected next season. Soil moisture critically low.', icon: <Sun className="w-6 h-6 text-orange-500" /> },
+    { type: 'Heavy Monsoon', detail: 'Above average rainfall predicted. Risk of water logging.', icon: <CloudRain className="w-6 h-6 text-blue-500" /> },
+    { type: 'Normal', detail: 'Favorable conditions with intermittent showers.', icon: <Sprout className="w-6 h-6 text-green-500" /> }
+  ];
+  return forecasts[Math.floor(Math.random() * forecasts.length)];
+};
+
+// --- Translations ---
+const TRANSLATIONS = {
+  en: {
+    appTitle: "Krishi Sahayak",
+    heroTitle: "Heal Your Plants",
+    heroSubtitle: "With AI Precision",
+    heroDesc: "Your personal botanist in your pocket. Instantly identify plant diseases, receive expert treatment plans, and keep your garden thriving with our advanced AI diagnostic tool.",
+    startDiag: "Start Diagnosis",
+    viewGuides: "View Care Guides",
+    kisanSupport: "Kisan Crisis Support",
+    instAnalysis: "Instant Analysis",
+    instDesc: "Get results in seconds using our rapid scanning technology.",
+    expCure: "Expert Cure",
+    expDesc: "Receive detailed treatment steps approved by botanists.",
+    acc: "98% Accuracy",
+    accDesc: "Trusted by thousands of gardeners for reliable results.",
+    diagTools: "Diagnostic Tools",
+    scanPrompt: "How would you like to scan?",
+    uploadImg: "Upload Image",
+    uploadDesc: "JPG or PNG supported",
+    useCam: "Use Camera",
+    camDesc: "Take a photo directly",
+    backHome: "Back to Home",
+    runDiag: "Run Diagnosis",
+    scanning: "Scanning...",
+    analyzing: "Analyzing leaf patterns...",
+    symptoms: "Symptoms",
+    treatment: "Recommended Treatment",
+    newScan: "New Scan",
+    saveReport: "Save Report",
+    savePdf: "Save as PDF",
+    saveJpg: "Save as JPG",
+    disclaimer: "Disclaimer: AI analysis is for reference only. Consult a specialist for critical crops.",
+    camDenied: "Camera Access Denied",
+    camDeniedDesc: "We couldn't access your camera. Please allow permission or try uploading a file instead.",
+    goBack: "Go Back",
+    uploadPhoto: "Upload Photo",
+    cancel: "Cancel",
+    flip: "Flip",
+    careGuide: "Plant Care Guide",
+    commonIssues: "Common Issues",
+    chatPlaceholder: "Ask about plant care...",
+    chatWelcome: "Hello! I'm your plant expert. Ask me anything about your garden!",
+    chatOnline: "Online",
+    botName: "FloraBot",
+    match: "Match",
+    generatedBy: "Analysis Report Generated by Krishi Sahayak",
+    soilTitle: "Soil Health Lab",
+    soilDesc: "Analyze NPK & pH levels for expert crop advice.",
+    startSoil: "Test Soil",
+    enterSoilDetails: "Enter Soil Details",
+    nitrogen: "Nitrogen (N)",
+    phosphorus: "Phosphorus (P)",
+    potassium: "Potassium (K)",
+    phLevel: "pH Level",
+    analyzeSoil: "Analyze Soil",
+    recCrop: "Recommended Crop",
+    recFert: "Recommended Fertilizer",
+    results: "Analysis Results",
+    listenHeader: "We are here to listen.",
+    listenDesc: "Tell us about your crop loss, debt, or weather concerns. We will guide you to the right solution.",
+    listening: "Listening...",
+    voiceExample: "Example: My cotton crop was destroyed by pests and I have no money for the next season. What should I do?",
+    stop: "Stop",
+    voice: "Voice",
+    gpsLocked: "GPS Locked",
+    retry: "Retry",
+    autoDetect: "Auto Detect",
+    cityPlaceholder: "City/Village Name",
+    processing: "Processing...",
+    getHelp: "Get Expert Help",
+    browseSchemes: "Or browse schemes directly:",
+    analyzingSit: "Analyzing Situation...",
+    connecting: "Connecting to expert systems...",
+    expertGuide: "Expert Guidance",
+    weatherAlert: "Weather Alert",
+    govtSupport: "Government Support",
+    checkElig: "Check Eligibility",
+    askAgain: "Ask Another Question",
+    backToFlora: "Back to Krishi Sahayak",
+    kisanSubtitle: "AI Crisis Support & Expert Guidance for Farmers",
+    weatherTitle: "Local Weather & Crops",
+    loadingWeather: "Loading local weather...",
+    temp: "Temp",
+    humidity: "Humidity",
+    wind: "Wind",
+    suitableCrops: "Suitable Crops for this Season",
+    location: "Location",
+    detectLoc: "Detect Location",
+    manualLoc: "Manual Location",
+    search: "Search",
+    enterCity: "Enter City Name",
+    useGPS: "Use GPS",
+    setLocationPrompt: "Set your location to see local crop recommendations",
+    sendSms: "Send via SMS",
+    nearbySpec: "Nearby Specialists",
+    selectSpec: "Select a specialist to message",
+    msgPreview: "Message Preview",
+    send: "Send Message",
+    connectSpec: "Connect with Specialists",
+    saveContact: "Save Contact",
+    findStore: "Find Stores",
+    nearbyServices: "Nearby Agriculture Services",
+    usingDefaultLoc: "Using default location. Enable GPS for better results.",
+    manualEntry: "Manual Entry",
+    enterName: "Specialist Name",
+    enterPhone: "Phone Number",
+    addManual: "Add Custom Contact",
+    backToList: "Back to List"
+  },
+  hi: {
+    appTitle: "कृषि सहायक",
+    heroTitle: "अपने पौधों को",
+    heroSubtitle: "AI सटीकता के साथ ठीक करें",
+    heroDesc: "आपकी जेब में आपका निजी वनस्पतिशास्त्री। पौधों की बीमारियों को तुरंत पहचानें, विशेषज्ञ उपचार योजनाएं प्राप्त करें, और हमारे उन्नत AI निदान उपकरण के साथ अपने बगीचे को हरा-भरा रखें।",
+    startDiag: "निदान शुरू करें",
+    viewGuides: "देखभाल गाइड देखें",
+    kisanSupport: "किसान सहायता (संकट)",
+    instAnalysis: "त्वरित विश्लेषण",
+    instDesc: "हमारी तेज़ स्कैनिंग तकनीक का उपयोग करके सेकंडों में परिणाम प्राप्त करें।",
+    expCure: "विशेषज्ञ इलाज",
+    expDesc: "वनस्पतिशास्त्रियों द्वारा अनुमोदित विस्तृत उपचार चरण प्राप्त करें।",
+    acc: "98% सटीकता",
+    accDesc: "विश्वसनीय परिणामों के लिए हजारों बागवानों द्वारा भरोसा किया गया।",
+    diagTools: "निदान उपकरण",
+    scanPrompt: "आप कैसे स्कैन करना चाहेंगे?",
+    uploadImg: "छवि अपलोड करें",
+    uploadDesc: "JPG या PNG समर्थित",
+    useCam: "कैमरा का उपयोग करें",
+    camDesc: "सीधे फोटो लें",
+    backHome: "मुख्य पृष्ठ पर वापस जाएं",
+    runDiag: "निदान चलाएं",
+    scanning: "स्कैनिंग...",
+    analyzing: "पत्तियों के पैटर्न का विश्लेषण...",
+    symptoms: "लक्षण",
+    treatment: "सुझाया गया उपचार",
+    newScan: "नया स्कैन",
+    saveReport: "रिपोर्ट सहेजें",
+    savePdf: "PDF के रूप में सहेजें",
+    saveJpg: "JPG के रूप में सहेजें",
+    disclaimer: "अस्वीकरण: AI विश्लेषण केवल संदर्भ के लिए है। महत्वपूर्ण फसलों के लिए विशेषज्ञ से परामर्श लें।",
+    camDenied: "कैमरा एक्सेस अस्वीकृत",
+    camDeniedDesc: "हम आपके कैमरे तक नहीं पहुंच सके। कृपया अनुमति दें या इसके बजाय फ़ाइल अपलोड करने का प्रयास करें।",
+    goBack: "वापस जाओ",
+    uploadPhoto: "फोटो अपलोड करें",
+    cancel: "रद्द करें",
+    flip: "पलटें",
+    careGuide: "पौधों की देखभाल गाइड",
+    commonIssues: "आम समस्याएं",
+    chatPlaceholder: "पौधों की देखभाल के बारे में पूछें...",
+    chatWelcome: "नमस्ते! मैं आपका पौधा विशेषज्ञ हूँ। अपने बगीचे के बारे में मुझसे कुछ भी पूछें!",
+    chatOnline: "ऑनलाइन",
+    botName: "फ्लोरा बॉट",
+    match: "मिलान",
+    generatedBy: "कृषि सहायक द्वारा निर्मित विश्लेषण रिपोर्ट",
+    soilTitle: "मृदा स्वास्थ्य प्रयोगशाला",
+    soilDesc: "फसल सलाह के लिए NPK और pH स्तर की जाँच करें।",
+    startSoil: "मिट्टी की जाँच",
+    enterSoilDetails: "मिट्टी का विवरण दर्ज करें",
+    nitrogen: "नाइट्रोजन (N)",
+    phosphorus: "फास्फोरस (P)",
+    potassium: "पोटेशियम (K)",
+    phLevel: "pH स्तर",
+    analyzeSoil: "विश्लेषण करें",
+    recCrop: "अनुशंसित फसल",
+    recFert: "अनुशंसित खाद",
+    results: "विश्लेषण परिणाम",
+    listenHeader: "हम आपकी बात सुनने के लिए यहां हैं।",
+    listenDesc: "हमें अपनी फसल के नुकसान, कर्ज या मौसम संबंधी चिंताओं के बारे में बताएं। हम आपको सही समाधान तक मार्गदर्शन करेंगे।",
+    listening: "सुन रहा है...",
+    voiceExample: "उदाहरण: मेरी कपास की फसल कीटों से नष्ट हो गई और मेरे पास अगले सीजन के लिए पैसे नहीं हैं। मुझे क्या करना चाहिए?",
+    stop: "रुकें",
+    voice: "आवाज़",
+    gpsLocked: "GPS लॉक किया गया",
+    retry: "पुनः प्रयास करें",
+    autoDetect: "स्वतः पता लगाएं",
+    cityPlaceholder: "शहर/गांव का नाम",
+    processing: "प्रक्रिया जारी है...",
+    getHelp: "विशेषज्ञ सहायता प्राप्त करें",
+    browseSchemes: "या सीधे योजनाएं देखें:",
+    analyzingSit: "स्थिति का विश्लेषण...",
+    connecting: "विशेषज्ञ प्रणालियों से जुड़ रहा है...",
+    expertGuide: "विशेषज्ञ मार्गदर्शन",
+    weatherAlert: "मौसम चेतावनी",
+    govtSupport: "सरकारी सहायता",
+    checkElig: "पात्रता की जांच करें",
+    askAgain: "दूसरा प्रश्न पूछें",
+    backToFlora: "कृषि सहायक पर वापस जाएं",
+    kisanSubtitle: "किसानों के लिए AI संकट सहायता और विशेषज्ञ मार्गदर्शन",
+    weatherTitle: "स्थानीय मौसम और फसलें",
+    loadingWeather: "स्थानीय मौसम लोड हो रहा है...",
+    temp: "तापमान",
+    humidity: "नमी",
+    wind: "हवा",
+    suitableCrops: "इस मौसम के लिए उपयुक्त फसलें",
+    location: "स्थान",
+    detectLoc: "स्थान का पता लगाएं",
+    manualLoc: "मैनुअल स्थान",
+    search: "खोजें",
+    enterCity: "शहर का नाम दर्ज करें",
+    useGPS: "जीपीएस का उपयोग करें",
+    setLocationPrompt: "स्थानीय फसल सुझाव देखने के लिए अपना स्थान निर्धारित करें",
+    sendSms: "SMS द्वारा भेजें",
+    nearbySpec: "निकटतम विशेषज्ञ",
+    selectSpec: "संदेश भेजने के लिए एक विशेषज्ञ चुनें",
+    msgPreview: "संदेश पूर्वावलोकन",
+    send: "संदेश भेजें",
+    connectSpec: "विशेषज्ञों से जुड़ें",
+    saveContact: "संपर्क सहेजें",
+    findStore: "दुकानें खोजें",
+    nearbyServices: "निकटतम कृषि सेवाएं",
+    usingDefaultLoc: "डिफ़ॉल्ट स्थान का उपयोग कर रहा है। बेहतर परिणामों के लिए GPS सक्षम करें।",
+    manualEntry: "मैनुअल प्रविष्टि",
+    enterName: "विशेषज्ञ का नाम",
+    enterPhone: "फ़ोन नंबर",
+    addManual: "कस्टम संपर्क जोड़ें",
+    backToList: "सूची पर वापस जाएं"
+  },
+  ta: {
+    appTitle: "கிருஷி சஹாயக்",
+    heroTitle: "தாவரங்களை",
+    heroSubtitle: "AI துல்லியத்துடன் குணப்படுத்தவும்",
+    heroDesc: "உங்கள் பாக்கெட்டில் உங்கள் தனிப்பட்ட தாவரவியலாளர். தாவர நோய்களை உடனடியாக அடையாளம் காணவும், நிபுணர் சிகிச்சை திட்டங்களைப் பெறவும்.",
+    startDiag: "கண்டறிதலைத் தொடங்கவும்",
+    viewGuides: "வழிகாட்டியைப் பார்க்கவும்",
+    kisanSupport: "விவசாயி உதவி (நெருக்கடி)",
+    instAnalysis: "உடனடி பகுப்பாய்வு",
+    instDesc: "எங்கள் விரைவான ஸ்கேனிங் தொழில்நுட்பத்தைப் பயன்படுத்தி நொடிகளில் முடிவுகளைப் பெறுங்கள்.",
+    expCure: "நிபுணர் சிகிச்சை",
+    expDesc: "தாவரவியலாளர்களால் அங்கீகரிக்கப்பட்ட விரிவான சிகிச்சை முறைகளைப் பெறுங்கள்.",
+    acc: "98% துல்லியம்",
+    accDesc: "நம்பகமான முடிவுகளுக்காக ஆயிரக்கணக்கான தோட்டக்காரர்களால் நம்பப்படுகிறது.",
+    diagTools: "கண்டறியும் கருவிகள்",
+    scanPrompt: "நீங்கள் எப்படி ஸ்கேன் செய்ய விரும்புகிறீர்கள்?",
+    uploadImg: "படத்தைப் பதிவேற்றவும்",
+    uploadDesc: "JPG அல்லது PNG ஆதரிக்கப்படுகிறது",
+    useCam: "கேமராவைப் பயன்படுத்தவும்",
+    camDesc: "நேரடியாக புகைப்படம் எடுக்கவும்",
+    backHome: "முகப்புக்குத் திரும்பு",
+    runDiag: "நோய் கண்டறிதல்",
+    scanning: "ஸ்கேன் செய்கிறது...",
+    analyzing: "இலை வடிவங்களை ஆய்வு செய்கிறது...",
+    symptoms: "அறிகுறிகள்",
+    treatment: "பரிந்துரைக்கப்பட்ட சிகிச்சை",
+    newScan: "புதிய ஸ்கேன்",
+    saveReport: "அறிக்கையைச் சேமி",
+    savePdf: "PDF ஆக சேமி",
+    saveJpg: "JPG ஆக சேமி",
+    disclaimer: "பொறுப்புத் துறப்பு: AI பகுப்பாய்வு குறிப்புக்காக மட்டுமே. முக்கியமான பயிர்களுக்கு நிபுணரை அணுகவும்.",
+    camDenied: "கேமரா அனுமதி மறுக்கப்பட்டது",
+    camDeniedDesc: "எங்களால் உங்கள் கேமராவை அணுக முடியவில்லை. அனுமதியை வழங்கவும் அல்லது கோப்பைப் பதிவேற்ற முயற்சிக்கவும்.",
+    goBack: "திரும்பிச் செல்",
+    uploadPhoto: "புகைப்படத்தைப் பதிவேற்றவும்",
+    cancel: "ரத்துசெய்",
+    flip: "திருப்பு",
+    careGuide: "தாவர பராமரிப்பு வழிகாட்டி",
+    commonIssues: "பொதுவான சிக்கல்கள்",
+    chatPlaceholder: "தாவர பராமரிப்பு பற்றி கேளுங்கள்...",
+    chatWelcome: "வணக்கம்! நான் உங்கள் தாவர நிபுணர். உங்கள் தோட்டத்தைப் பற்றி என்னிடம் எதையும் கேளுங்கள்!",
+    chatOnline: "ஆன்லைன்",
+    botName: "ஃப்ளோரா பாட்",
+    match: "பொருத்தம்",
+    generatedBy: "கிருஷி சஹாயக் மூலம் உருவாக்கப்பட்ட அறிக்கை",
+    soilTitle: "மண் பரிசோதனை",
+    soilDesc: "பயிர் ஆலோசனைக்கு NPK மற்றும் pH அளவை பகுப்பாய்வு செய்யுங்கள்.",
+    startSoil: "மண் சோதனை",
+    enterSoilDetails: "மண் விவரங்களை உள்ளிடவும்",
+    nitrogen: "நைட்ரஜன் (N)",
+    phosphorus: "பாஸ்பரஸ் (P)",
+    potassium: "பொட்டாசியம் (K)",
+    phLevel: "pH நிலை",
+    analyzeSoil: "பகுப்பாய்வு",
+    recCrop: "பரிந்துரைக்கப்பட்ட பயிர்",
+    recFert: "பரிந்துரைக்கப்பட்ட உரம்",
+    results: "பகுப்பாய்வு முடிவுகள்",
+    listenHeader: "நாங்கள் கேட்க இங்கே இருக்கிறோம்.",
+    listenDesc: "உங்கள் பயிர் இழப்பு, கடன் அல்லது வானிலை கவலைகள் பற்றி எங்களிடம் கூறுங்கள். சரியான தீர்வுக்கு நாங்கள் உங்களுக்கு வழிகாட்டுவோம்.",
+    listening: "கேட்கிறது...",
+    voiceExample: "உதாரவம்: பூச்சிகளால் என் பருத்தி பயிர் அழிந்துவிட்டது, அடுத்த பருவத்திற்கு என்னிடம் பணம் இல்லை. நான் என்ன செய்ய வேண்டும்?",
+    stop: "நிறுத்து",
+    voice: "குரல்",
+    gpsLocked: "GPS லாக் செய்யப்பட்டது",
+    retry: "மீண்டும் முயல்க",
+    autoDetect: "தானாகக் கண்டறி",
+    cityPlaceholder: "நகரம்/கிராமத்தின் பெயர்",
+    processing: "செயலாக்குகிறது...",
+    getHelp: "நிபுணர் உதவியைப் பெறுங்கள்",
+    browseSchemes: "அல்லது திட்டங்களை நேரடியாக உலாவவும்:",
+    analyzingSit: "சூழ்நிலையை பகுப்பாய்வு செய்கிறது...",
+    connecting: "நிபுணர் அமைப்புகளுடன் இணைகிறது...",
+    expertGuide: "நிபுணர் வழிகாட்டுதல்",
+    weatherAlert: "வானிலை எச்சரிக்கை",
+    govtSupport: "அரசு உதவி",
+    checkElig: "தகுதியைச் சரிபார்க்கவும்",
+    askAgain: "மற்றொரு கேள்வியைக் கேளுங்கள்",
+    backToFlora: "கிருஷி சஹாயக்-க்குத் திரும்பு",
+    kisanSubtitle: "விவசாயிகளுக்கான AI நெருக்கடி ஆதரவு & நிபுணர் வழிகாட்டுதல்",
+    weatherTitle: "உள்ளூர் வானிலை & பயிர்கள்",
+    loadingWeather: "வானிலை ஏற்றப்படுகிறது...",
+    temp: "வெப்பநிலை",
+    humidity: "ஈரப்பதம்",
+    wind: "காற்று",
+    suitableCrops: "இந்த பருவத்திற்கு ஏற்ற பயிர்கள்",
+    location: "இடம்",
+    detectLoc: "இருப்பிடத்தைக் கண்டறி",
+    manualLoc: "கைமுறை இருப்பிடம்",
+    search: "தேடு",
+    enterCity: "நகரப் பெயரை உள்ளிடவும்",
+    useGPS: "GPS ஐப் பயன்படுத்தவும்",
+    setLocationPrompt: "உள்ளூர் பயிர் பரிந்துரைகளைப் பார்க்க உங்கள் இருப்பிடத்தை அமைக்கவும்",
+    sendSms: "SMS மூலம் அனுப்பு",
+    nearbySpec: "அருகிலுள்ள நிபுணர்கள்",
+    selectSpec: "செய்தி அனுப்ப நிபுணரைத் தேர்வுசெய்க",
+    msgPreview: "செய்தி முன்னோட்டம்",
+    send: "செய்தி அனுப்பு",
+    connectSpec: "நிபுணர்களுடன் இணைக்கவும்",
+    saveContact: "தொடர்பைச் சேமி",
+    findStore: "கடைகளைக் கண்டறியவும்",
+    nearbyServices: "அருகிலுள்ள வேளாண் சேவைகள்",
+    usingDefaultLoc: "இயல்புநிலை இருப்பிடத்தைப் பயன்படுத்துகிறது. சிறந்த முடிவுகளுக்கு GPS ஐ இயக்கவும்.",
+    manualEntry: "கையேடு நுழைவு",
+    enterName: "நிபுணர் பெயர்",
+    enterPhone: "தொலைபேசி எண்",
+    addManual: "தனிப்பயன் தொடர்பைச் சேர்",
+    backToList: "பட்டியலுக்குத் திரும்பு"
+  }
+};
+
+// --- Components ---
+
+const LocationMap = ({ lat, lng, className = "" }) => {
+  if (!lat || !lng || lat === "Manual" || lat === "Unknown") {
+    return (
+      <div className={`bg-gray-100 flex items-center justify-center text-gray-400 text-xs ${className}`}>
+        <p>Map view unavailable for manual/unknown locations</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`relative overflow-hidden border border-gray-200 shadow-sm bg-gray-50 ${className}`}>
+      <iframe 
+        width="100%" 
+        height="100%" 
+        frameBorder="0" 
+        scrolling="no" 
+        marginHeight="0" 
+        marginWidth="0" 
+        src={`https://maps.google.com/maps?q=${lat},${lng}&z=15&output=embed`}
+        title="Location Map"
+        className="absolute inset-0 w-full h-full"
+      />
+      <div className="absolute bottom-2 right-2">
+        <a 
+          href={`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`}
+          target="_blank"
+          rel="noreferrer"
+          className="bg-white/90 backdrop-blur text-blue-600 text-[10px] px-2 py-1 rounded shadow hover:bg-white flex items-center gap-1"
+        >
+          Open in Maps <ExternalLink className="w-3 h-3" />
+        </a>
+      </div>
+    </div>
+  );
+};
+
+ 
