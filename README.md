@@ -6,15 +6,13 @@
 
 🎓 Academic Context
 
-Institution: [Your College/University Name]
+Institution: IIIT Kota
 
-Course: [Course Name, e.g., CS101 / Web Development]
-
-Project Period: [e.g., Spring 2024 Semester]
+Course: B.Tech
 
 👨‍💻 Project Overview
 
-🚀 Objective: [A one-sentence description of the problem your team is solving].
+🚀 Objective: AI based crop disease detection
 
 🔭 Status: Currently in development for our final submission.
 
