@@ -34,13 +34,12 @@ Project Lead
 
 Member 2
 
-Frontend Developer
+backend Developer
 
 @kartikey9568133-prog
 
 Member 3
-
-Backend Engineer
+frontend Engineer
 
 @saurabh13-di
 
