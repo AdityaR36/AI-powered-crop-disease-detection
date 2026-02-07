@@ -1528,3 +1528,380 @@ const AuthPage = ({ onLogin }) => {
     </div>
   );
 };
+// --- Authenticated App Component (Main Logic) ---
+const AuthenticatedApp = () => {
+  const [view, setView] = useState('landing');
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [result, setResult] = useState(null);
+  const [scanProgress, setScanProgress] = useState(0);
+  const [showSaveMenu, setShowSaveMenu] = useState(false);
+  const [language, setLanguage] = useState('en'); 
+  const [showLangMenu, setShowLangMenu] = useState(false);
+  const [showLocationMenu, setShowLocationMenu] = useState(false);
+  const [manualLocationQuery, setManualLocationQuery] = useState('');
+  
+  // New State for SMS Modal
+  const [showSmsModal, setShowSmsModal] = useState(false);
+  const [notification, setNotification] = useState(null);
+
+  const [globalLocation, setGlobalLocation] = useState(() => {
+    try {
+      const saved = localStorage.getItem('krishi_user_location');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  const updateGlobalLocation = (loc) => {
+    setGlobalLocation(loc);
+    if (loc) {
+      localStorage.setItem('krishi_user_location', JSON.stringify(loc));
+    } else {
+      localStorage.removeItem('krishi_user_location');
+    }
+  };
+
+  const showNotification = (msg, type = 'info') => {
+    setNotification({ msg, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  const [weather, setWeather] = useState(null);
+  const [loadingWeather, setLoadingWeather] = useState(false);
+
+  const fileInputRef = useRef(null);
+  const t = TRANSLATIONS[language];
+
+  const getPosition = (options) => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error("Geolocation not supported"));
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(resolve, reject, options);
+    });
+  };
+
+  const getLocationName = async (lat, lng) => {
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10`);
+      if (!response.ok) throw new Error("Geocoding failed");
+      const data = await response.json();
+      const name = data.address.village || data.address.town || data.address.city || data.address.county || "Detected Location";
+      const state = data.address.state || data.address.country;
+      return `${name}, ${state}`;
+    } catch (e) {
+      return `${lat.toFixed(4)}°N, ${lng.toFixed(4)}°E`;
+    }
+  };
+
+  const fetchWeatherForLocation = (location) => {
+      setLoadingWeather(true);
+      const month = new Date().getMonth(); 
+      let season = 'summer';
+      let temp = 32;
+      let condition = 'Sunny';
+      
+      if (month >= 5 && month <= 8) { 
+        season = 'monsoon';
+        temp = 28;
+        condition = 'Cloudy';
+      } else if (month >= 10 || month <= 1) { 
+        season = 'winter';
+        temp = 18;
+        condition = 'Clear';
+      }
+
+      setTimeout(() => {
+        setWeather({
+          location: location.name,
+          temp: temp, 
+          condition: condition,
+          humidity: 65,
+          wind: 12,
+          season: season,
+          crops: SEASONAL_CROPS[season]
+        });
+        setLoadingWeather(false);
+      }, 1000);
+  };
+
+  const detectLocation = async () => {
+    setLoadingWeather(true);
+    setShowLocationMenu(false); 
+    
+    if (!navigator.geolocation) {
+      showNotification("Geolocation is not supported by your browser.", "error");
+      setLoadingWeather(false);
+      return;
+    }
+
+    try {
+      const pos = await getPosition({ timeout: 10000, enableHighAccuracy: true });
+      const { latitude, longitude } = pos.coords;
+
+      let locationName = "Your Area";
+      try {
+          locationName = await getLocationName(latitude, longitude);
+      } catch(e) {
+          console.warn("Reverse geocoding failed", e);
+      }
+      
+      const newLocation = { 
+          name: locationName, 
+          lat: latitude, 
+          lng: longitude, 
+          source: 'Device' 
+      };
+
+      updateGlobalLocation(newLocation);
+      fetchWeatherForLocation(newLocation);
+
+    } catch (error) {
+      console.warn("Error detecting location:", error);
+      let errorMessage = "Unable to retrieve location.";
+      if (error && error.code === 1) errorMessage = "Location permission denied.";
+      else if (error && error.code === 2) errorMessage = "Location unavailable.";
+      else if (error && error.code === 3) errorMessage = "Location request timed out.";
+      
+      showNotification(`${errorMessage} Using default location.`, "error");
+      
+      const defaultLoc = { name: "New Delhi (Default)", lat: 28.61, lng: 77.20, source: 'Default' };
+      updateGlobalLocation(defaultLoc);
+      fetchWeatherForLocation(defaultLoc);
+    } finally {
+      setLoadingWeather(false);
+    }
+  };
+
+  const handleManualSearch = async (query) => {
+    if (!query.trim()) return;
+    setLoadingWeather(true);
+    setShowLocationMenu(false); 
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        const result = data[0];
+        const newLocation = {
+          name: result.display_name.split(',')[0], 
+          lat: parseFloat(result.lat),
+          lng: parseFloat(result.lon),
+          source: 'Manual'
+        };
+        updateGlobalLocation(newLocation);
+        fetchWeatherForLocation(newLocation);
+        setManualLocationQuery(''); 
+      } else {
+        showNotification("Location not found. Please try again.", "error");
+        setLoadingWeather(false);
+      }
+    } catch (e) {
+      console.error("Search failed", e);
+      showNotification("Search failed. Check connection.", "error");
+      setLoadingWeather(false);
+    }
+  };
+
+  useEffect(() => {
+    if (globalLocation) {
+        fetchWeatherForLocation(globalLocation);
+    }
+  }, []); 
+
+  useEffect(() => {
+    const loadScript = (src) => {
+      return new Promise((resolve, reject) => {
+        if (document.querySelector(`script[src="${src}"]`)) {
+          resolve();
+          return;
+        }
+        const script = document.createElement('script');
+        script.src = src;
+        script.async = true;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.body.appendChild(script);
+      });
+    };
+
+    Promise.all([
+      loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"),
+      loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js")
+    ]).then(() => {
+      console.log("Export tools loaded");
+    }).catch(err => console.error("Failed to load export tools", err));
+  }, []);
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setSelectedImage(event.target.result);
+        setView('analyze');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const startAnalysis = () => {
+    setIsAnalyzing(true);
+    setScanProgress(0);
+
+    const interval = setInterval(() => {
+      setScanProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          return 100;
+        }
+        return prev + 5;
+      });
+    }, 100);
+
+    setTimeout(() => {
+      const db = getDiseaseDB(language);
+      const randomDisease = db[Math.floor(Math.random() * db.length)];
+      setResult(randomDisease);
+      setIsAnalyzing(false);
+      setView('result');
+      clearInterval(interval);
+    }, 2500);
+  };
+
+  const resetApp = () => {
+    setSelectedImage(null);
+    setResult(null);
+    setScanProgress(0);
+    setView('dashboard');
+    setShowSaveMenu(false);
+  };
+
+  const generateReportCanvas = async () => {
+    const element = document.getElementById('report-container');
+    if (!element || !window.html2canvas) return null;
+
+    return await window.html2canvas(element, {
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        scale: 2,
+        ignoreElements: (element) => element.classList.contains('no-export')
+    });
+  };
+
+  const handleDownloadPdf = async () => {
+    setShowSaveMenu(false);
+    if (!window.html2canvas || !window.jspdf) {
+        showNotification("PDF generator not ready yet.", "error");
+        return;
+    }
+
+    try {
+        const canvas = await generateReportCanvas();
+        if (!canvas) return;
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.9);
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`FloraGuard-Report-${new Date().getTime()}.pdf`);
+        showNotification("PDF saved successfully!", "success");
+    } catch (err) {
+        console.error("PDF generation failed:", err);
+        showNotification("Could not generate PDF.", "error");
+    }
+  };
+
+  const handleDownloadJpg = async () => {
+    setShowSaveMenu(false);
+    if (!window.html2canvas) {
+        showNotification("Image generator not ready yet.", "error");
+        return;
+    }
+    try {
+        const canvas = await generateReportCanvas();
+        if (!canvas) return;
+        const data = canvas.toDataURL('image/jpeg', 0.9);
+        const link = document.createElement('a');
+        link.href = data;
+        link.download = `FloraGuard-Report-${new Date().getTime()}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showNotification("Image saved successfully!", "success");
+    } catch (err) {
+        console.error("Image generation failed:", err);
+        showNotification("Could not generate image.", "error");
+    }
+  };
+
+  return (
+    <>
+      <Navbar 
+        setView={setView} 
+        t={t} 
+        setShowLocationMenu={setShowLocationMenu} 
+        showLocationMenu={showLocationMenu} 
+        loadingWeather={loadingWeather} 
+        globalLocation={globalLocation} 
+        detectLocation={detectLocation} 
+        manualLocationQuery={manualLocationQuery} 
+        setManualLocationQuery={setManualLocationQuery} 
+        handleManualSearch={handleManualSearch} 
+        setShowLangMenu={setShowLangMenu} 
+        showLangMenu={showLangMenu} 
+        language={language} 
+        setLanguage={setLanguage}
+      />
+      <main className="container mx-auto max-w-4xl py-6 print:py-0 print:max-w-none">
+        {view === 'landing' && <LandingPage setView={setView} t={t} setShowLocationMenu={setShowLocationMenu} weather={weather} loadingWeather={loadingWeather} language={language} />}
+        {view === 'dashboard' && <Dashboard setView={setView} t={t} fileInputRef={fileInputRef} handleImageUpload={handleImageUpload} />}
+        {view === 'analyze' && <AnalyzeView isAnalyzing={isAnalyzing} scanProgress={scanProgress} t={t} selectedImage={selectedImage} resetApp={resetApp} startAnalysis={startAnalysis} />}
+        {view === 'result' && <ResultView result={result} selectedImage={selectedImage} t={t} resetApp={resetApp} showSaveMenu={showSaveMenu} setShowSaveMenu={setShowSaveMenu} handleDownloadPdf={handleDownloadPdf} handleDownloadJpg={handleDownloadJpg} setShowSmsModal={setShowSmsModal} />}
+        {view === 'camera' && <CameraView setView={setView} t={t} setSelectedImage={setSelectedImage} />}
+        {view === 'guide' && <GuideView setView={setView} t={t} language={language} />}
+        {view === 'map' && <SpecialistMapView onBack={() => setView('landing')} userLocation={globalLocation} language={language} />}
+        {view === 'soil-analysis' && <SoilAnalysisView onBack={() => setView('landing')} language={language} />}
+        {view === 'kisan-sahayak' && <KisanSahayakView onBack={() => setView('landing')} language={language} globalLocation={globalLocation} updateGlobalLocation={updateGlobalLocation} />}
+      </main>
+      
+      {notification && (
+        <div className={`fixed bottom-24 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full shadow-lg z-50 text-sm font-semibold animate-fade-in flex items-center gap-2 ${notification.type === 'error' ? 'bg-red-500 text-white' : 'bg-gray-800 text-white'}`}>
+          {notification.type === 'error' && <AlertTriangle className="w-4 h-4" />}
+          {notification.type === 'success' && <Check className="w-4 h-4" />}
+          {notification.msg}
+        </div>
+      )}
+
+      {showSmsModal && (
+        <SmsShareModal 
+          language={language} 
+          result={result} 
+          onClose={() => setShowSmsModal(false)} 
+        />
+      )}
+      
+      <ChatWidget t={t} language={language} />
+    </>
+  );
+};
+
+// --- Root App Component ---
+export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // If not logged in, show Auth Page
+  if (!isLoggedIn) {
+    return <AuthPage onLogin={() => setIsLoggedIn(true)} />;
+  }
+
+  // Once logged in, show the main application which contains all the logic hooks
+  return <AuthenticatedApp />;
+}
