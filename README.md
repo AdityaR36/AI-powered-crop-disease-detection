@@ -1,16 +1,24 @@
-👋 [Project Name]
+ 👋 [Project Name]
 
 <p align="center">
-<img src="https://www.google.com/search?q=https://capsule-render.vercel.app/render%3Ftype%3Dwaving%26color%3Dauto%26height%3D200%26section%3Dheader%26text%3DOur%2520Team%2520Project%26fontSize%3D80" />
+<img src="https://www.google.com/search?q=https://capsule-render.vercel.app/render%3Ftype%3Dwaving%26color%3Dauto%26height%3D200%26section%3Dheader%26text%3DCollege%2520Team%2520Project%26fontSize%3D70" alt="Banner" />
 </p>
+
+🎓 Academic Context
+
+Institution: [Your College/University Name]
+
+Course: [Course Name, e.g., CS101 / Web Development]
+
+Project Period: [e.g., Spring 2024 Semester]
 
 👨‍💻 Project Overview
 
-🚀 Objective: [A one-sentence description of what this project does].
+🚀 Objective: [A one-sentence description of the problem your team is solving].
 
-🔭 Status: Currently working on Scalable Architecture.
+🔭 Status: Currently in development for our final submission.
 
-⚡ Motto: Coding together, growing together.
+⚡ Motto: Learning, building, and scaling together.
 
 👥 Meet the Team
 
@@ -22,59 +30,58 @@ GitHub
 
 Member 1
 
-Lead Developer
+Project Lead
 
-@username
+@AdityaR36
 
 Member 2
 
-UI/UX Designer
+Frontend Developer
 
-@username
+@kartikey9568133-prog
 
 Member 3
 
 Backend Engineer
 
-@username
+@saurabh13-di
+
+Member 4
+
+DevOps / QA
+
+@vidhanagarwal594-oss
 
 🛠️ Tech Stack
 
 <p align="left">
-<img src="https://www.google.com/search?q=https://skillicons.dev/icons%3Fi%3Djs,ts,react,nextjs,nodejs,tailwind,mongodb,docker,aws,git" />
+<img src="https://www.google.com/search?q=https://skillicons.dev/icons%3Fi%3Djs,ts,react,nextjs,nodejs,tailwind,mongodb,docker,aws,git" alt="Tech Stack" />
 </p>
 
 🚀 Getting Started
-
-To get a local copy up and running, follow these steps:
 
 Clone the repo
 
 git clone [https://github.com/](https://github.com/)[YOUR-USER]/[REPO-NAME].git
 
 
-Install dependencies
+Install & Run
 
-npm install
-
-
-Run the project
-
-npm run dev
+npm install && npm run dev
 
 
 📊 Project Insights
 
 <p align="center">
-<img height="180em" src="https://github-readme-stats.vercel.app/api?username=[YOUR-USER]&show_icons=true&theme=tokyonight&include_all_commits=true&count_private=true"/>
-<img height="180em" src="https://www.google.com/search?q=https://github-readme-stats.vercel.app/api/top-langs/%3Fusername%3D[YOUR-USER]&layout=compact&theme=tokyonight"/>
+<img height="180em" src="https://github-readme-stats.vercel.app/api?username=[YOUR-USER]&show_icons=true&theme=tokyonight&include_all_commits=true&count_private=true" />
+<img height="180em" src="https://www.google.com/search?q=https://github-readme-stats.vercel.app/api/top-langs/%3Fusername%3D[YOUR-USER]&layout=compact&theme=tokyonight" />
 </p>
 
-📫 Get in Touch
+📫 Contact Our Team
 
 <p align="left">
-<a href="https://www.google.com/search?q=https://linkedin.com/in/[YOUR-LINKEDIN]" target="blank"><img align="center" src="https://www.google.com/search?q=https://raw.githubusercontent.com/rahuldkjain/github-profile-readme-generator/master/src/images/icons/Social/linked-in-alt.svg" alt="LinkedIn" height="30" width="40" /></a>
-<a href="https://twitter.com/[YOUR-TWITTER]" target="blank"><img align="center" src="https://www.google.com/search?q=https://raw.githubusercontent.com/rahuldkjain/github-profile-readme-generator/master/src/images/icons/Social/twitter.svg" alt="Twitter" height="30" width="40" /></a>
+<a href="https://www.google.com/search?q=https://linkedin.com/in/[YOUR-LINKEDIN]" target="blank"><img src="https://www.google.com/search?q=https://raw.githubusercontent.com/rahuldkjain/github-profile-readme-generator/master/src/images/icons/Social/linked-in-alt.svg" alt="LinkedIn" height="30" width="40" /></a>
+<a href="https://twitter.com/[YOUR-TWITTER]" target="blank"><img src="https://www.google.com/search?q=https://raw.githubusercontent.com/rahuldkjain/github-profile-readme-generator/master/src/images/icons/Social/twitter.svg" alt="Twitter" height="30" width="40" /></a>
 </p>
 
 <p align="center">
