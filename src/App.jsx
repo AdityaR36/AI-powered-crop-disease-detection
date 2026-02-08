@@ -1000,6 +1000,13 @@ const Dashboard = ({ setView, t, fileInputRef, handleImageUpload }) => (
           </div>
           <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-gray-600" />
         </button>
+        <button onClick={() => setView('history')} className="w-full flex items-center justify-between p-4 rounded-xl hover:bg-gray-50 transition-colors border border-gray-200 group mt-3">
+          <div className="flex items-center gap-4">
+            <div className="p-2 bg-purple-50 text-purple-600 rounded-lg group-hover:bg-purple-100 transition-colors"><FileText className="w-6 h-6" /></div>
+            <div className="text-left"><span className="block font-semibold text-gray-800">Saved Reports</span><span className="text-xs text-gray-500">View past analysis</span></div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-gray-600" />
+        </button>
       </div>
     </div>
     <button onClick={() => setView('landing')} className="mt-12 text-gray-400 hover:text-gray-600 text-sm font-medium flex items-center gap-2 transition-colors"><ArrowLeft className="w-4 h-4" /> {t.backHome}</button>
@@ -1121,7 +1128,7 @@ const AnalyzeView = ({ isAnalyzing, scanProgress, t, selectedImage, resetApp, st
   </div>
 );
 
-const ResultView = ({ result, selectedImage, t, resetApp, showSaveMenu, setShowSaveMenu, handleDownloadPdf, handleDownloadJpg, setShowSmsModal }) => (
+const ResultView = ({ result, selectedImage, t, resetApp, showSaveMenu, setShowSaveMenu, handleDownloadPdf, handleDownloadJpg, setShowSmsModal, onSave, isSaving }) => (
   <div className="px-6 pb-12 w-full max-w-md mx-auto animate-slide-up print:px-0 print:max-w-none print:pb-0">
     <div id="report-container" className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden mb-6 print:shadow-none print:border-none print:rounded-none">
       <div className={`p-6 flex items-center gap-4 print:border-b print:border-gray-200 ${result.status === 'healthy' ? 'bg-emerald-50' : result.status === 'critical' ? 'bg-rose-50' : 'bg-amber-50'}`}>
@@ -1155,6 +1162,7 @@ const ResultView = ({ result, selectedImage, t, resetApp, showSaveMenu, setShowS
             <div className="absolute bottom-full right-0 mb-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 p-2 animate-fade-in z-20">
               <button onClick={handleDownloadPdf} className="w-full flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium text-left"><FileText className="w-4 h-4 text-rose-500" />{t.savePdf}</button>
               <button onClick={handleDownloadJpg} className="w-full flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium text-left"><ImageIcon className="w-4 h-4 text-blue-500" />{t.saveJpg}</button>
+              <button onClick={onSave} disabled={isSaving} className="w-full flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium text-left"><Download className="w-4 h-4 text-emerald-500" />{isSaving ? 'Saving...' : 'Save to History'}</button>
               <button
                 onClick={() => { setShowSaveMenu(false); setShowSmsModal(true); }}
                 className="w-full flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium text-left border-t border-gray-100"
@@ -1711,6 +1719,267 @@ const SoilAnalysisView = ({ onBack, language }) => {
   );
 };
 
+// --- Specialist Map View Component ---
+const SpecialistMapView = ({ onBack, userLocation, language }) => {
+  const t = TRANSLATIONS[language];
+  const [specialists, setSpecialists] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Mock data for specialists if API is not ready
+    const mockSpecialists = [
+      { id: 1, name: "Dr. R.K. Singh", role: "Plant Pathologist", lat: 28.61, lng: 77.23, distance: "2.5 km", phone: "9876543210" },
+      { id: 2, name: "Kisan Seva Kendra", role: "Agri-Store", lat: 28.62, lng: 77.21, distance: "3.8 km", phone: "1800123456" },
+      { id: 3, name: "Green Earth Nursery", role: "Nursery", lat: 28.60, lng: 77.22, distance: "4.1 km", phone: "9898989898" }
+    ];
+
+    setTimeout(() => {
+      setSpecialists(mockSpecialists);
+      setLoading(false);
+    }, 1000);
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-white pb-20 animate-fade-in relative z-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-100 p-4 sticky top-0 z-10 flex items-center gap-4 shadow-sm">
+        <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600">
+          <ArrowLeft className="w-6 h-6" />
+        </button>
+        <h2 className="text-xl font-bold text-gray-900">{t.nearbyServices}</h2>
+      </div>
+
+      <div className="h-[40vh] w-full relative bg-gray-100">
+        <LocationMap
+          lat={userLocation?.lat || 28.61}
+          lng={userLocation?.lng || 77.20}
+          className="w-full h-full"
+        />
+        <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur px-3 py-2 rounded-lg shadow-md text-xs font-semibold text-gray-600 flex items-center gap-2">
+          <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+          {userLocation ? t.usingDefaultLoc : "Default Location"}
+        </div>
+      </div>
+
+      <div className="p-6 -mt-6 relative bg-white rounded-t-3xl shadow-lg">
+        <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6"></div>
+
+        <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <MapPin className="w-5 h-5 text-emerald-600" />
+          {t.nearbySpec}
+        </h3>
+
+        {loading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="flex gap-4 p-4 border border-gray-100 rounded-xl animate-pulse">
+                <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {specialists.map(spec => (
+              <div key={spec.id} className="p-4 border border-gray-100 rounded-xl hover:border-emerald-200 transition-colors shadow-sm flex items-center gap-4">
+                <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center shrink-0">
+                  {spec.role.includes("Store") ? <Store className="w-6 h-6" /> : <User className="w-6 h-6" />}
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-bold text-gray-900">{spec.name}</h4>
+                  <p className="text-sm text-gray-500">{spec.role}</p>
+                  <p className="text-xs text-emerald-600 font-medium mt-1 flex items-center gap-1">
+                    <Navigation className="w-3 h-3" /> {spec.distance}
+                  </p>
+                </div>
+                <a href={`tel:${spec.phone}`} className="p-3 bg-green-50 text-green-600 rounded-full hover:bg-green-100 transition-colors">
+                  <Phone className="w-5 h-5" />
+                </a>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// --- Kisan Sahayak View Component (Crisis Center) ---
+const KisanSahayakView = ({ onBack, language, globalLocation, updateGlobalLocation }) => {
+  const t = TRANSLATIONS[language];
+  const [isListening, setIsListening] = useState(false);
+  const [query, setQuery] = useState("");
+  const [analysis, setAnalysis] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // Mock function to simulate voice input
+  const toggleListening = () => {
+    if (isListening) {
+      setIsListening(false);
+    } else {
+      setIsListening(true);
+      setTimeout(() => {
+        setIsListening(false);
+        setQuery(t.voiceExample.replace("Example: ", ""));
+      }, 3000);
+    }
+  };
+
+  const handleAnalyze = async () => {
+    if (!query.trim()) return;
+    setIsAnalyzing(true);
+
+    // Simulate AI analysis
+    setTimeout(() => {
+      setAnalysis({
+        status: "Critical",
+        advice: language === 'hi'
+          ? "आपकी स्थिति गंभीर लग रही है। हम आपको तुरंत पीएम फसल बीमा योजना के लिए आवेदन करने की सलाह देते हैं। साथ ही, कीट नियंत्रण के लिए नीम आधारित कीटनाशकों का उपयोग करें।"
+          : language === 'ta'
+            ? "உங்கள் நிலைமை கவலைக்கிடமாக உள்ளது. பிரதம மந்திரி பயிர் காப்பீட்டுத் திட்டத்திற்கு உடனடியாக விண்ணப்பிக்குமாறு பரிந்துரைக்கிறோம்."
+            : "Your situation seems critical. We recommend applying for PM Fasal Bima Yojana immediately. Also, use neem-based pesticides for pest control.",
+        schemeId: 1
+      });
+      setIsAnalyzing(false);
+    }, 2000);
+  };
+
+  const schemes = getGovernmentSchemes(language);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-emerald-900 to-emerald-800 pb-20 text-white animate-fade-in">
+      {/* Header */}
+      <div className="p-6 flex items-center gap-4">
+        <button onClick={onBack} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/80">
+          <ArrowLeft className="w-6 h-6" />
+        </button>
+        <div>
+          <h2 className="text-xl font-bold">{t.kisanSupport}</h2>
+          <p className="text-xs text-emerald-200">{t.kisanSubtitle}</p>
+        </div>
+      </div>
+
+      <div className="px-6 space-y-8">
+        {/* Voice Input Section */}
+        <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/20 text-center relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent opacity-50"></div>
+
+          <HeartHandshake className="w-12 h-12 text-emerald-300 mx-auto mb-4" />
+          <h3 className="text-xl font-bold mb-2">{t.listenHeader}</h3>
+          <p className="text-emerald-100 text-sm mb-6 leading-relaxed">
+            {t.listenDesc}
+          </p>
+
+          <div className="relative mb-6">
+            <textarea
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t.voiceExample}
+              className="w-full bg-black/20 border border-emerald-500/30 rounded-xl p-4 text-white placeholder-emerald-200/50 focus:outline-none focus:ring-2 focus:ring-emerald-400 min-h-[100px]"
+            />
+            {isListening && (
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-xl flex items-center justify-center flex-col gap-3 z-10">
+                <div className="flex gap-1 items-end h-8">
+                  <div className="w-1.5 bg-emerald-400 rounded-full animate-[bounce_1s_infinite] h-4"></div>
+                  <div className="w-1.5 bg-emerald-400 rounded-full animate-[bounce_1.1s_infinite] h-8"></div>
+                  <div className="w-1.5 bg-emerald-400 rounded-full animate-[bounce_1.2s_infinite] h-6"></div>
+                  <div className="w-1.5 bg-emerald-400 rounded-full animate-[bounce_1s_infinite] h-4"></div>
+                </div>
+                <span className="text-sm font-semibold text-emerald-300">{t.listening}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={toggleListening}
+              className={`p-4 rounded-full transition-all ${isListening ? 'bg-red-500 hover:bg-red-600 animate-pulse' : 'bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-900/50'}`}
+            >
+              {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+            </button>
+            <button
+              onClick={handleAnalyze}
+              disabled={!query.trim() || isAnalyzing}
+              className="px-6 py-3 bg-white text-emerald-900 rounded-full font-bold hover:bg-emerald-50 transition-colors disabled:opacity-50 flex items-center gap-2"
+            >
+              {isAnalyzing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+              {t.getHelp}
+            </button>
+          </div>
+        </div>
+
+        {/* Analysis Result */}
+        {analysis && (
+          <div className="bg-white rounded-3xl p-6 text-gray-800 shadow-xl animate-fade-in">
+            <h3 className="font-bold text-emerald-800 mb-2 flex items-center gap-2">
+              <Bot className="w-5 h-5" /> {t.expertGuide}
+            </h3>
+            <p className="text-gray-600 leading-relaxed mb-4 text-sm bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+              {analysis.advice}
+            </p>
+            {analysis.schemeId && (
+              <div className="mt-4">
+                <h4 className="font-bold text-sm mb-3 uppercase tracking-wider text-gray-500">{t.govtSupport}</h4>
+                {schemes.filter(s => s.id === analysis.schemeId).map(scheme => (
+                  <a
+                    key={scheme.id}
+                    href={scheme.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block bg-gradient-to-r from-emerald-50 to-blue-50 p-4 rounded-xl border border-emerald-100 hover:shadow-md transition-all group"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 bg-white rounded-full text-emerald-600 shadow-sm group-hover:scale-110 transition-transform">
+                        {scheme.icon}
+                      </div>
+                      <div className="flex-1">
+                        <h5 className="font-bold text-gray-900 mb-1 flex items-center gap-2">
+                          {scheme.title}
+                          <ExternalLink className="w-4 h-4 text-gray-400" />
+                        </h5>
+                        <p className="text-xs text-gray-600 line-clamp-2">{scheme.description}</p>
+                      </div>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Government Schemes List (Always visible) */}
+        {!analysis && (
+          <div className="space-y-4">
+            <h3 className="font-bold text-emerald-100 px-2">{t.browseSchemes}</h3>
+            {schemes.map(scheme => (
+              <a
+                key={scheme.id}
+                href={scheme.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block bg-white/5 hover:bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/10 transition-all hover:translate-x-1"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-white/10 rounded-xl text-emerald-300">
+                    {scheme.icon}
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-white mb-1">{scheme.title}</h5>
+                    <p className="text-xs text-emerald-200/70 line-clamp-1">{scheme.description}</p>
+                  </div>
+                </div>
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // --- Auth Page Component ---
 const AuthPage = ({ onLogin }) => {
   const [formData, setFormData] = useState({
@@ -2023,6 +2292,96 @@ const AuthPage = ({ onLogin }) => {
     </div>
   );
 };
+// --- History View Component ---
+const HistoryView = ({ onBack, onViewReport }) => {
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  const fetchHistory = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const response = await fetch('http://localhost:5000/api/history', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setHistory(data.data);
+      }
+    } catch (err) {
+      console.error('Failed to load history');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteReport = async (id, e) => {
+    e.stopPropagation();
+    if (!window.confirm('Delete this report?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/history/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        setHistory(history.filter(h => h.id !== id));
+      }
+    } catch (err) {
+      alert('Failed to delete');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 pb-20 animate-fade-in print:hidden">
+      <div className="bg-white border-b border-gray-100 p-4 sticky top-0 z-10 flex items-center gap-4 shadow-sm">
+        <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600">
+          <ArrowLeft className="w-6 h-6" />
+        </button>
+        <h2 className="text-xl font-bold text-gray-900">Saved Reports</h2>
+      </div>
+      <div className="p-4 max-w-2xl mx-auto space-y-4">
+        {loading ? <div className="text-center p-8 text-gray-500">Loading history...</div> : history.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FileText className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No saved reports</h3>
+            <p className="text-gray-500">Your analysis history will appear here.</p>
+          </div>
+        ) : (
+          history.map(item => (
+            <div key={item.id} onClick={() => onViewReport(item)} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4 cursor-pointer hover:shadow-md transition-all">
+              <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden shrink-0">
+                <img src={`http://localhost:5000${item.imageUrl}`} className="w-full h-full object-cover" onError={(e) => e.target.src = 'https://placehold.co/100?text=N/A'} alt="Crop" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-start">
+                  <h3 className="font-bold text-gray-900 truncate pr-2">{item.name}</h3>
+                  <button onClick={(e) => deleteReport(item.id, e)} className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"><X className="w-5 h-5" /></button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">{new Date(item.savedAt).toLocaleDateString()} • {new Date(item.savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                <div className="mt-2 flex gap-2">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${item.status === 'healthy' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    {item.status === 'healthy' ? 'Healthy' : 'Disease'}
+                  </span>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                    {Math.round(item.confidence)}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
+
 // --- Authenticated App Component (Main Logic) ---
 const AuthenticatedApp = () => {
   const [view, setView] = useState('landing');
@@ -2035,6 +2394,7 @@ const AuthenticatedApp = () => {
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [showLocationMenu, setShowLocationMenu] = useState(false);
   const [manualLocationQuery, setManualLocationQuery] = useState('');
+  const [savingReport, setSavingReport] = useState(false);
 
   // --- Roboflow Offline State ---
   const [modelLoaded, setModelLoaded] = useState(false);
@@ -2521,7 +2881,21 @@ const AuthenticatedApp = () => {
         {view === 'landing' && <LandingPage setView={setView} t={t} setShowLocationMenu={setShowLocationMenu} weather={weather} loadingWeather={loadingWeather} language={language} modelLoaded={modelLoaded} loadingModel={loadingModel} />}
         {view === 'dashboard' && <Dashboard setView={setView} t={t} fileInputRef={fileInputRef} handleImageUpload={handleImageUpload} />}
         {view === 'analyze' && <AnalyzeView isAnalyzing={isAnalyzing} scanProgress={scanProgress} t={t} selectedImage={selectedImage} resetApp={resetApp} startAnalysis={startAnalysis} />}
-        {view === 'result' && <ResultView result={result} selectedImage={selectedImage} t={t} resetApp={resetApp} showSaveMenu={showSaveMenu} setShowSaveMenu={setShowSaveMenu} handleDownloadPdf={handleDownloadPdf} handleDownloadJpg={handleDownloadJpg} setShowSmsModal={setShowSmsModal} />}
+        {view === 'result' && <ResultView result={result} selectedImage={selectedImage} t={t} resetApp={resetApp} showSaveMenu={showSaveMenu} setShowSaveMenu={setShowSaveMenu} handleDownloadPdf={handleDownloadPdf} handleDownloadJpg={handleDownloadJpg} setShowSmsModal={setShowSmsModal} onSave={async () => {
+          if (savingReport || !result) return;
+          setSavingReport(true);
+          try {
+            const response = await fetch('http://localhost:5000/api/history', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+              body: JSON.stringify({ ...result, imageUrl: result.imageUrl || selectedImage || result.image }) // Fallbacks for imageUrl
+            });
+            const data = await response.json();
+            if (data.success) alert(language === 'hi' ? 'रिपोर्ट सहेजी गई!' : 'Report saved!');
+            else alert('Failed to save: ' + data.message);
+          } catch (e) { alert('Error saving report'); } finally { setSavingReport(false); setShowSaveMenu(false); }
+        }} isSaving={savingReport} />}
+        {view === 'history' && <HistoryView onBack={() => setView('dashboard')} onViewReport={(report) => { setResult(report); setView('result'); }} />}
         {view === 'camera' && <CameraView setView={setView} t={t} setSelectedImage={setSelectedImage} />}
         {view === 'guide' && <GuideView setView={setView} t={t} language={language} />}
         {view === 'map' && <SpecialistMapView onBack={() => setView('landing')} userLocation={globalLocation} language={language} />}

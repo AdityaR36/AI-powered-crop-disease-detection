@@ -1,11 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const Anthropic = require('@anthropic-ai/sdk');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-// Initialize Anthropic client
-const anthropic = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY || ''
-});
+// Initialize Gemini client
+// Ensure GEMINI_API_KEY is set in .env
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 // Conversation history storage (in production, use a database)
 const conversations = new Map();
@@ -75,30 +74,35 @@ router.post('/message', async (req, res) => {
         const convId = conversationId || `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         let history = conversations.get(convId) || [];
 
-        // Add user message to history
-        history.push({
-            role: 'user',
-            content: message
-        });
+        // Add user message to local history for storage
+        // Note used for API call directly, but for persistence
+        // history.push({ role: 'user', parts: [{ text: message }] }); // Gemini format
 
         try {
-            // Call Claude API
-            const response = await anthropic.messages.create({
-                model: 'claude-3-sonnet-20240229', // Updated model name
-                max_tokens: 1024,
-                system: getSystemPrompt(language, location),
-                messages: history
+            // Initialize model with system instruction
+            const model = genAI.getGenerativeModel({
+                model: "gemini-1.5-flash",
+                systemInstruction: getSystemPrompt(language, location)
             });
 
-            const assistantMessage = response.content[0].text;
-
-            // Add assistant response to history
-            history.push({
-                role: 'assistant',
-                content: assistantMessage
+            // Start chat with history
+            const chat = model.startChat({
+                history: history,
+                generationConfig: {
+                    maxOutputTokens: 1000,
+                },
             });
 
-            // Keep only last 20 messages to prevent token overflow
+            const result = await chat.sendMessage(message);
+            const response = await result.response;
+            const assistantMessage = response.text();
+
+            // Update history with new interaction
+            // Used for next turn
+            history.push({ role: 'user', parts: [{ text: message }] });
+            history.push({ role: 'model', parts: [{ text: assistantMessage }] });
+
+            // Keep only last 20 messages (10 turns) to prevent token overflow
             if (history.length > 20) {
                 history = history.slice(-20);
             }
@@ -115,7 +119,7 @@ router.post('/message', async (req, res) => {
                 }
             });
         } catch (apiError) {
-            console.error('Claude API error:', apiError);
+            console.error('Gemini API error:', apiError);
 
             // Fallback response if API fails
             const fallbackResponses = {

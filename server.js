@@ -10,7 +10,13 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173'
+    origin: (origin, callback) => {
+        if (!origin || origin.startsWith('http://localhost:')) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    }
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -56,6 +62,7 @@ const chatRoutes = require('./routes/chat');
 const locationRoutes = require('./routes/location');
 const smsRoutes = require('./routes/sms');
 const agricultureRoutes = require('./routes/agriculture');
+const historyRoutes = require('./routes/history');
 
 // Use routes
 app.use('/api/auth', authRoutes);
@@ -66,6 +73,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/location', locationRoutes);
 app.use('/api/sms', smsRoutes);
 app.use('/api/agriculture', agricultureRoutes);
+app.use('/api/history', historyRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
